@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}数据分析工具箱{% endblock %}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap');
+    </style>
+    <!-- Plotly for charts -->
+    <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="8" height="8" rx="2" fill="#00ed64"/>
+                    <rect x="14" y="2" width="8" height="8" rx="2" fill="#00ed64" opacity="0.7"/>
+                    <rect x="2" y="14" width="8" height="8" rx="2" fill="#00ed64" opacity="0.5"/>
+                    <rect x="14" y="14" width="8" height="8" rx="2" fill="#00ed64" opacity="0.85"/>
+                </svg>
+                <span class="nav-logo-text">DataAnalytics</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('segmentation') }}" class="nav-link">分词统计</a></li>
+                <li><a href="{{ url_for('wordcloud') }}" class="nav-link">词云制作</a></li>
+                <li><a href="{{ url_for('sentiment') }}" class="nav-link">情感分析</a></li>
+                <li><a href="{{ url_for('regression') }}" class="nav-link">回归分析</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4 class="footer-heading">工具</h4>
+                    <a href="{{ url_for('segmentation') }}" class="footer-link">分词统计</a>
+                    <a href="{{ url_for('wordcloud') }}" class="footer-link">词云制作</a>
+                </div>
+                <div class="footer-col">
+                    <h4 class="footer-heading">分析</h4>
+                    <a href="{{ url_for('sentiment') }}" class="footer-link">情感分析</a>
+                    <a href="{{ url_for('regression') }}" class="footer-link">回归分析</a>
+                </div>
+                <div class="footer-col">
+                    <h4 class="footer-heading">关于</h4>
+                    <p class="footer-text">基于 Python + Flask 的轻量级中文文本数据在线分析平台。</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2026 DataAnalytics Toolkit. Built with Flask & MongoDB Design.</p>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}回归分析 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">统计建模</span>
+        <h1 class="page-title">回归分析</h1>
+        <p class="page-desc">上传 CSV 文件或手动输入数据，自动建立线性回归模型，查看统计指标与交互散点图。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+        <!-- Tab: CSV Upload / Manual Input -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">输入数据</h3>
+            </div>
+            <div class="card-body">
+                <!-- Tabs -->
+                <div class="tab-bar" style="margin-bottom:20px;">
+                    <button class="tab-btn active" data-tab="csv-tab">CSV 文件上传</button>
+                    <button class="tab-btn" data-tab="manual-tab">手动输入</button>
+                </div>
+
+                <!-- CSV Upload -->
+                <div id="csv-tab" class="tab-content">
+                    <form id="csv-form">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">选择 CSV 文件</label>
+                                <input type="file" id="csv-file" accept=".csv" class="file-input">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="x-col">X 列名（自变量）</label>
+                                <input type="text" id="x-col" class="text-input" placeholder="如：面积" style="width:180px;">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="y-col">Y 列名（因变量）</label>
+                                <input type="text" id="y-col" class="text-input" placeholder="如：价格" style="width:180px;">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">分析</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Manual Input -->
+                <div id="manual-tab" class="tab-content" style="display:none;">
+                    <form id="manual-form">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">X 值（逗号分隔）</label>
+                                <input type="text" id="manual-x" class="text-input" placeholder="1, 2, 3, 4, 5" style="width:100%;">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Y 值（逗号分隔）</label>
+                                <input type="text" id="manual-y" class="text-input" placeholder="2.1, 4.0, 6.2, 7.9, 10.1" style="width:100%;">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">分析</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="regression-result" class="results-area" style="display:none;">
+            <!-- Model Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">模型摘要</h3>
+                </div>
+                <div class="card-body">
+                    <div class="regression-stats" id="regression-stats"></div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">回归散点图</h3>
+                </div>
+                <div class="chart-container" id="regression-chart"></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/regression.js') }}"></script>
+{% endblock %}

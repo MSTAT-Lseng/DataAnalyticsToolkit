@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}情感分析 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">自然语言处理</span>
+        <h1 class="page-title">情感分析</h1>
+        <p class="page-desc">使用 SnowNLP 对中文文本进行情感倾向分析，自动识别积极、中性、消极情感。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+        <!-- Input Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">文本情感分析</h3>
+                <p class="card-desc">输入文本，系统自动分句并逐句评分（0~1，>0.6 为积极，<0.4 为消极）</p>
+            </div>
+            <div class="card-body">
+                <form id="sentiment-form">
+                    <div class="form-group">
+                        <textarea
+                            id="sentiment-text"
+                            class="textarea"
+                            rows="6"
+                            placeholder="在此粘贴要分析的文本……&#10;&#10;示例：今天天气真好，心情非常愉快！但是工作还没做完，有点焦虑。希望一切顺利吧。"
+                        ></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">开始分析</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="sentiment-result" class="results-area" style="display:none;">
+            <!-- Overall Score -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">整体情感评分</h3>
+                </div>
+                <div class="card-body">
+                    <div class="sentiment-overview">
+                        <div class="sentiment-score-wrap">
+                            <div class="sentiment-score" id="sentiment-score">--</div>
+                            <div class="sentiment-label" id="sentiment-label">--</div>
+                        </div>
+                        <div class="sentiment-bars">
+                            <div class="sentiment-bar-row">
+                                <span class="bar-label positive">积极</span>
+                                <div class="bar-track"><div class="bar-fill positive" id="bar-positive"></div></div>
+                                <span class="bar-value" id="val-positive">0%</span>
+                            </div>
+                            <div class="sentiment-bar-row">
+                                <span class="bar-label neutral">中性</span>
+                                <div class="bar-track"><div class="bar-fill neutral" id="bar-neutral"></div></div>
+                                <span class="bar-value" id="val-neutral">0%</span>
+                            </div>
+                            <div class="sentiment-bar-row">
+                                <span class="bar-label negative">消极</span>
+                                <div class="bar-track"><div class="bar-fill negative" id="bar-negative"></div></div>
+                                <span class="bar-value" id="val-negative">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentence Details -->
+            <div class="card" id="sentence-detail-card" style="display:none;">
+                <div class="card-header">
+                    <h3 class="card-title">逐句分析详情</h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>#</th><th>句子</th><th>得分</th><th>情感</th></tr>
+                        </thead>
+                        <tbody id="sentence-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+document.getElementById('sentiment-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const text = document.getElementById('sentiment-text').value.trim();
+    if (!text) { alert('请输入文本'); return; }
+
+    const resultDiv = document.getElementById('sentiment-result');
+    resultDiv.style.display = 'block';
+
+    try {
+        const resp = await fetch('{{ url_for("api_sentiment") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text})
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            const r = data.result;
+            document.getElementById('sentiment-score').textContent = r.score.toFixed(2);
+            document.getElementById('sentiment-label').textContent = r.label;
+            document.getElementById('sentiment-label').className = 'sentiment-label ' + (r.label === '积极' ? 'positive' : r.label === '消极' ? 'negative' : 'neutral');
+
+            document.getElementById('bar-positive').style.width = (r.positive_ratio * 100) + '%';
+            document.getElementById('val-positive').textContent = (r.positive_ratio * 100).toFixed(1) + '%';
+
+            document.getElementById('bar-neutral').style.width = (r.neutral_ratio * 100) + '%';
+            document.getElementById('val-neutral').textContent = (r.neutral_ratio * 100).toFixed(1) + '%';
+
+            document.getElementById('bar-negative').style.width = (r.negative_ratio * 100) + '%';
+            document.getElementById('val-negative').textContent = (r.negative_ratio * 100).toFixed(1) + '%';
+
+            // Sentence details
+            const detailCard = document.getElementById('sentence-detail-card');
+            const tbody = document.getElementById('sentence-table-body');
+            if (r.sentences && r.sentences.length > 1) {
+                detailCard.style.display = '';
+                tbody.innerHTML = r.sentences.map((s, i) =>
+                    `<tr>
+                        <td>${i + 1}</td>
+                        <td class="sentence-text">${escapeHtml(s.text)}</td>
+                        <td><code>${s.score.toFixed(3)}</code></td>
+                        <td><span class="badge badge-${s.label === '积极' ? 'green' : s.label === '消极' ? 'orange' : 'muted'}">${s.label}</span></td>
+                    </tr>`
+                ).join('');
+            } else {
+                detailCard.style.display = 'none';
+            }
+        } else {
+            alert('分析失败：' + (data.error || '未知错误'));
+        }
+    } catch (err) {
+        alert('请求失败：' + err.message);
+    }
+});
+</script>
+{% endblock %}

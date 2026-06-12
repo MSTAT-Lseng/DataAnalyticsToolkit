@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}数据分析工具箱 — 首页{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-container">
+        <h1 class="hero-title">数据分析工具箱</h1>
+        <p class="hero-subtitle">
+            集成分词统计、词云制作、情感分析与回归分析，<br>
+            一站式中文文本数据处理平台。
+        </p>
+        <div class="hero-actions">
+            <a href="{{ url_for('segmentation') }}" class="btn btn-primary">开始使用</a>
+            <a href="#features" class="btn btn-secondary-on-dark">了解更多</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section class="section" id="features">
+    <div class="container">
+        <div class="section-header">
+            <span class="eyebrow">核心功能</span>
+            <h2 class="section-title">四大分析模块</h2>
+            <p class="section-desc">覆盖从文本预处理到统计建模的完整分析流程</p>
+        </div>
+
+        <div class="features-grid">
+            <!-- 分词统计 -->
+            <a href="{{ url_for('segmentation') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/>
+                        <path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/>
+                        <line x1="7" y1="12" x2="17" y2="12"/><line x1="12" y1="7" x2="12" y2="17"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">分词统计</h3>
+                <p class="feature-desc">中英文混合分词，智能过滤停用词，生成高频词频表与交互柱状图。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+
+            <!-- 词云制作 -->
+            <a href="{{ url_for('wordcloud') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10"/>
+                        <path d="M12 2a15.3 15.3 0 00-4 10 15.3 15.3 0 004 10"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">词云制作</h3>
+                <p class="feature-desc">基于词频自动生成精美词云图，支持自定义颜色与形状，直观展示关键词。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+
+            <!-- 情感分析 -->
+            <a href="{{ url_for('sentiment') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                        <line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">情感分析</h3>
+                <p class="feature-desc">基于 SnowNLP 的中文情感评分，自动识别积极/消极倾向，支持逐句分析。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+
+            <!-- 回归分析 -->
+            <a href="{{ url_for('regression') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="2" y1="20" x2="22" y2="20"/><polyline points="4 18 8 8 13 12 17 4 20 8"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">回归分析</h3>
+                <p class="feature-desc">上传 CSV 或手动输入数据，自动建立线性回归模型，绘制交互散点图与回归线。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="cta-banner">
+    <div class="container">
+        <h2 class="cta-title">准备好分析你的数据了吗？</h2>
+        <p class="cta-desc">选择一个工具，粘贴或上传数据，即刻获得分析结果。</p>
+        <a href="{{ url_for('segmentation') }}" class="btn btn-primary">免费开始</a>
+    </div>
+</section>
+{% endblock %}

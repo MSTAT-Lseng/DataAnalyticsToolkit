@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}分词统计 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">文本处理</span>
+        <h1 class="page-title">分词统计</h1>
+        <p class="page-desc">输入文本，自动进行中英文分词，过滤停用词，输出高频词表和交互式柱状图。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+        <!-- Input Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">输入文本</h3>
+                <p class="card-desc">在下方粘贴文本，或上传文本文件（.txt）</p>
+            </div>
+            <div class="card-body">
+                <form id="segmentation-form">
+                    <div class="form-group">
+                        <textarea
+                            id="text-input"
+                            class="textarea"
+                            rows="8"
+                            placeholder="在此粘贴要分词的文本……&#10;&#10;支持中文、英文及混合文本。&#10;示例：今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。"
+                        ></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label" for="top-n">显示前 N 个高频词</label>
+                            <input type="number" id="top-n" class="text-input" value="20" min="5" max="100" style="width:100%;">
+                        </div>
+                        <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="remove-stopwords" checked>
+                                <span>过滤停用词</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <span class="form-hint">或上传文件：</span>
+                        <input type="file" id="file-input" accept=".txt" class="file-input">
+                        <button type="submit" class="btn btn-primary">开始分词</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results-container" class="results-area" style="display:none;">
+            <!-- Stats bar -->
+            <div class="stats-bar" id="stats-bar"></div>
+
+            <!-- Frequency Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">词频表</h3>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="freq-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>词语</th>
+                                <th>频次</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">高频词柱状图</h3>
+                </div>
+                <div class="chart-container" id="chart"></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/segmentation.js') }}"></script>
+{% endblock %}

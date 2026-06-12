@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}词云制作 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow">可视化</span>
+        <h1 class="page-title">词云制作</h1>
+        <p class="page-desc">输入文本或词频数据，自动生成精美词云图，直观展示文本的关键词分布。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+        <!-- Input Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">生成词云</h3>
+                <p class="card-desc">粘贴文本，系统自动分词并生成词云</p>
+            </div>
+            <div class="card-body">
+                <form id="wordcloud-form" method="post" action="{{ url_for('api_wordcloud') }}">
+                    <div class="form-group">
+                        <textarea
+                            name="text"
+                            class="textarea"
+                            rows="6"
+                            placeholder="在此粘贴文本内容……"
+                        ></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="max-words">最大词数</label>
+                            <input type="number" id="max-words" name="max_words" class="text-input" value="150" min="20" max="500" style="width:120px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="colormap">配色方案</label>
+                            <select id="colormap" name="colormap" class="text-input" style="width:180px;">
+                                <option value="viridis">Viridis</option>
+                                <option value="plasma">Plasma</option>
+                                <option value="inferno">Inferno</option>
+                                <option value="magma">Magma</option>
+                                <option value="cividis">Cividis</option>
+                                <option value="cool">Cool</option>
+                                <option value="hot">Hot</option>
+                                <option value="Set2">Set2</option>
+                                <option value="Dark2">Dark2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="bg-color">背景色</label>
+                            <input type="color" id="bg-color" name="bg_color" class="text-input" value="#ffffff" style="width:80px;height:44px;">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">生成词云</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div id="wordcloud-result" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">词云预览</h3>
+                    <div class="card-actions">
+                        <a id="download-link" href="#" download="wordcloud.png" class="btn btn-ghost">下载 PNG</a>
+                    </div>
+                </div>
+                <div class="wordcloud-display">
+                    <img id="wordcloud-image" src="" alt="词云图">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+// Wordcloud form handler
+document.getElementById('wordcloud-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const resultDiv = document.getElementById('wordcloud-result');
+    const img = document.getElementById('wordcloud-image');
+    const downloadLink = document.getElementById('download-link');
+
+    resultDiv.style.display = 'block';
+    img.style.opacity = '0.5';
+
+    try {
+        const resp = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await resp.json();
+        if (data.success) {
+            img.src = 'data:image/png;base64,' + data.image_base64;
+            img.style.opacity = '1';
+            downloadLink.href = img.src;
+            downloadLink.style.display = 'inline-flex';
+        } else {
+            img.alt = '生成失败：' + (data.error || '未知错误');
+            img.style.opacity = '1';
+        }
+    } catch (err) {
+        img.alt = '请求失败：' + err.message;
+        img.style.opacity = '1';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install *)",
+      "Bash(python3 *)",
+      "Bash(apt list *)",
+      "Bash(apt-get update *)",
+      "Bash(apt-get install *)",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/segmentation -H 'Content-Type: application/json' -d '{\"text\":\"今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。\",\"top_n\":10}')",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/segmentation -H 'Content-Type: application/json' -d '{\"text\":\"Hello world. This is a test.\",\"top_n\":10}')",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/sentiment -H 'Content-Type: application/json' -d '{\"text\":\"今天天气真好，心情非常愉快！但是工作还没做完，有点焦虑。希望一切顺利吧。\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/regression/manual -H 'Content-Type: application/json' -d '{\"data\":[{\"x\":1,\"y\":2.1},{\"x\":2,\"y\":4},{\"x\":3,\"y\":6.2},{\"x\":4,\"y\":7.9},{\"x\":5,\"y\":10.1}]}')",
+      "Bash(pkill -f \"python app.py\")"
+    ]
+  }
+}
