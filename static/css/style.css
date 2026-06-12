@@ -235,6 +235,10 @@ code, pre {
   flex-wrap: wrap;
 }
 
+.hero .btn-primary:hover {
+  color: var(--color-on-primary);
+}
+
 /* Page hero (inner pages) */
 .page-hero {
   position: relative;
@@ -266,12 +270,16 @@ code, pre {
 
 .eyebrow {
   display: inline-block;
-  font-size: 11px;
+  /* font-size: 11px; */
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--color-brand-green);
   margin-bottom: var(--sp-sm);
+}
+
+.eyebrow-dark {
+  color: var(--color-primary-deep) !important;
 }
 
 /* ----------------------------------------------------------

@@ -482,7 +482,7 @@ The system uses Euclid Circular A as its display face. The face is contemporary 
 | `{typography.body-sm}` | 14px | 400 | 1.50 | 0 | Secondary body, table cells |
 | `{typography.body-sm-medium}` | 14px | 500 | 1.50 | 0 | Active sidebar, button labels |
 | `{typography.caption-bold}` | 13px | 600 | 1.40 | 0 | Badge labels |
-| `{typography.micro-uppercase}` | 11px | 600 | 1.40 | 1px | Section eyebrows, course category tags |
+| `{typography.micro-uppercase}` | 11px | 600 | 1.40 | 1px | Section course category tags |
 | `{typography.button-md}` | 14px | 600 | 1.30 | 0 | Pill button labels |
 | `{typography.code-md}` | 14px | 400 | 1.55 | 0 | Code mockups |
 
