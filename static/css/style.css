@@ -694,8 +694,7 @@ select.text-input {
 }
 
 /* ---- Custom Stopwords Panel ---- */
-.stopwords-toggle,
-.dict-toggle {
+.panel-toggle {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-brand-green-dark);
@@ -706,12 +705,10 @@ select.text-input {
   padding: 0;
   transition: color 0.15s ease;
 }
-.stopwords-toggle:hover,
-.dict-toggle:hover {
+.panel-toggle:hover {
   color: var(--color-brand-green-mid);
 }
-.stopwords-toggle.open,
-.dict-toggle.open {
+.panel-toggle.open {
   color: var(--color-brand-green-mid);
 }
 

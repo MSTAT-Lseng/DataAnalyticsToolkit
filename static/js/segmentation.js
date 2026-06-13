@@ -50,19 +50,42 @@
             tabContents.forEach(c => c.style.display = 'none');
             this.classList.add('active');
             document.getElementById(this.dataset.tab).style.display = '';
+            // Toggle table preview visibility
+            if (this.dataset.tab === 'text-tab') {
+                tablePreviewArea.style.display = 'none';
+            } else if (this.dataset.tab === 'table-tab' && currentTableFile) {
+                tablePreviewArea.style.display = '';
+            }
         });
     });
 
     // ================================================================
-    // Stopwords panel toggles
+    // Panel accordion (stopwords / dict — mutually exclusive)
     // ================================================================
-    const stopwordsToggles = document.querySelectorAll('.stopwords-toggle');
-    stopwordsToggles.forEach(btn => {
+    const panelToggles = document.querySelectorAll('.panel-toggle');
+    panelToggles.forEach(btn => {
         btn.addEventListener('click', function () {
             const panel = document.getElementById(this.dataset.target);
+            const sibling = document.getElementById(this.dataset.sibling);
             const isOpen = panel.style.display !== 'none';
+
+            // Close sibling panel
+            if (sibling && !isOpen) {
+                sibling.style.display = 'none';
+                const siblingToggle = document.querySelector(`[data-target="${this.dataset.sibling}"]`);
+                if (siblingToggle) {
+                    const sibLabel = siblingToggle.dataset.label || siblingToggle.textContent.replace(/ [▸▾]$/, '');
+                    siblingToggle.textContent = sibLabel + ' ▸';
+                    siblingToggle.dataset.label = sibLabel;
+                    siblingToggle.classList.remove('open');
+                }
+            }
+
+            // Toggle current
             panel.style.display = isOpen ? 'none' : '';
-            this.textContent = isOpen ? '自定义停用词 ▸' : '自定义停用词 ▾';
+            const label = this.dataset.label || this.textContent.replace(/ [▸▾]$/, '');
+            this.dataset.label = label;
+            this.textContent = label + (isOpen ? ' ▸' : ' ▾');
             this.classList.toggle('open', !isOpen);
         });
     });
@@ -124,20 +147,6 @@
         const textarea = tab === 'text' ? textExtraStopwords : tableExtraStopwords;
         return parseStopwords(textarea.value);
     }
-
-    // ================================================================
-    // Dictionary panel toggles & handlers
-    // ================================================================
-    const dictToggles = document.querySelectorAll('.dict-toggle');
-    dictToggles.forEach(btn => {
-        btn.addEventListener('click', function () {
-            const panel = document.getElementById(this.dataset.target);
-            const isOpen = panel.style.display !== 'none';
-            panel.style.display = isOpen ? 'none' : '';
-            this.textContent = isOpen ? '自定义词典 ▸' : '自定义词典 ▾';
-            this.classList.toggle('open', !isOpen);
-        });
-    });
 
     // Dictionary file upload → textarea
     const textDictFile = document.getElementById('text-dict-file');
