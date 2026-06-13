@@ -129,6 +129,144 @@ def _register_routes(app: Flask) -> None:
             app.logger.exception("Segmentation API error")
             return jsonify({"success": False, "error": str(exc)}), 500
 
+    # ---- 表格文件预览 API ----
+    @app.route("/api/segmentation/preview", methods=["POST"])
+    def api_segmentation_preview():
+        """接收 Excel 文件，返回列名和预览数据。"""
+        try:
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}，请上传 .xls / .xlsx / .csv"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                columns = [str(c) for c in df.columns.tolist()]
+                # 取前 20 行作为预览
+                preview_df = df.head(20).fillna("")
+                rows = preview_df.values.tolist()
+                # 将每行转为字符串列表
+                rows = [[str(v) for v in row] for row in rows]
+
+                app.logger.info(
+                    "Excel preview: %d columns, %d preview rows (total %d rows)",
+                    len(columns), len(rows), len(df),
+                )
+
+                return jsonify({
+                    "success": True,
+                    "columns": columns,
+                    "rows": rows,
+                    "total_rows": len(df),
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Segmentation preview API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 表格文件分词 API ----
+    @app.route("/api/segmentation/file", methods=["POST"])
+    def api_segmentation_file():
+        """接收 Excel 文件 + 列名，对该列所有行进行分词统计。"""
+        try:
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            column = (request.form.get("column") or "").strip()
+            if not column:
+                return jsonify({"success": False, "error": "请选择要分词的列"}), 400
+
+            top_n = int(request.form.get("top_n", 20))
+            remove_stopwords = request.form.get("remove_stopwords", "true").lower() == "true"
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                if column not in df.columns:
+                    available = [str(c) for c in df.columns.tolist()]
+                    return jsonify({
+                        "success": False,
+                        "error": f"列 '{column}' 不存在。可用列：{', '.join(available)}"
+                    }), 400
+
+                # 提取该列所有非空文本
+                col_data = df[column].dropna().astype(str)
+                combined_text = "\n".join(col_data.tolist())
+
+                if not combined_text.strip():
+                    return jsonify({"success": False, "error": f"列 '{column}' 中没有有效文本"}), 400
+
+                from utils.segmentation import segment_text
+
+                freq_dict = segment_text(
+                    combined_text,
+                    top_n=top_n,
+                    remove_stopwords=remove_stopwords,
+                )
+                words = list(freq_dict.items())
+                total_count = sum(v for _, v in words)
+
+                app.logger.info(
+                    "File segmentation done: column='%s', %d rows, %d unique words, %d total tokens",
+                    column, len(col_data), len(words), total_count,
+                )
+
+                return jsonify({
+                    "success": True,
+                    "words": words,
+                    "unique_words": len(words),
+                    "total_count": total_count,
+                    "source_column": column,
+                    "source_rows": len(col_data),
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Segmentation file API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
     # ---- 词云生成 API ----
     @app.route("/api/wordcloud", methods=["POST"])
     def api_wordcloud():

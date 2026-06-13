@@ -6,52 +6,114 @@
     <div class="container">
         <span class="eyebrow eyebrow-dark">文本处理</span>
         <h1 class="page-title">分词统计</h1>
-        <p class="page-desc">输入文本，自动进行中英文分词，过滤停用词，输出高频词表和交互式柱状图。</p>
+        <p class="page-desc">输入文本或上传表格文件，自动进行中英文分词，过滤停用词，输出高频词表和交互式柱状图。</p>
     </div>
 </section>
 
 <section class="section">
     <div class="container container-narrow">
-        <!-- Input Form -->
+        <!-- Tab: Text / Table -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">输入文本</h3>
-                <p class="card-desc">在下方粘贴文本，或上传文本文件（.txt）</p>
+                <h3 class="card-title">输入数据</h3>
             </div>
-            <div class="card-body">
-                <form id="segmentation-form">
-                    <div class="form-group">
-                        <textarea
-                            id="text-input"
-                            class="textarea"
-                            rows="8"
-                            placeholder="在此粘贴要分词的文本……&#10;&#10;支持中文、英文及混合文本。&#10;示例：今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。"
-                        ></textarea>
-                    </div>
-                    <div class="form-row">
+            <div class="card-body" style="padding-top: 0;">
+                <!-- Tabs -->
+                <div class="tab-bar" style="margin-bottom:20px;">
+                    <button class="tab-btn active" data-tab="text-tab">文本数据</button>
+                    <button class="tab-btn" data-tab="table-tab">表格文件</button>
+                </div>
+
+                <!-- Text Input Tab -->
+                <div id="text-tab" class="tab-content">
+                    <form id="segmentation-form">
+                        <div class="form-group">
+                            <textarea
+                                id="text-input"
+                                class="textarea"
+                                rows="8"
+                                placeholder="在此粘贴要分词的文本……&#10;&#10;支持中文、英文及混合文本。&#10;示例：今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。"
+                            ></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label" for="top-n">显示前 N 个高频词</label>
+                                <input type="number" id="top-n" class="text-input" value="20" min="5" max="100" style="width:100%;">
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="remove-stopwords" checked>
+                                    <span>过滤停用词</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <span class="form-hint">或上传文本文件：</span>
+                            <input type="file" id="file-input" accept=".txt" class="file-input">
+                            <button type="submit" class="btn btn-primary">开始分词</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Table File Tab -->
+                <div id="table-tab" class="tab-content" style="display:none;">
+                    <form id="table-form">
+                        <p class="card-desc" style="margin-bottom:16px;">
+                            上传表格文件（.xls / .xlsx / .csv），点击表头选择要分词的一列，系统将该列所有行的文本合并后进行分词统计。
+                        </p>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">选择表格文件</label>
+                                <input type="file" id="table-file-input" accept=".xls,.xlsx,.csv" class="file-input">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label" for="table-top-n">显示前 N 个高频词</label>
+                                <input type="number" id="table-top-n" class="text-input" value="20" min="5" max="100" style="width:140px;">
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="table-remove-stopwords" checked>
+                                    <span>过滤停用词</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Preview -->
+        <div id="table-preview-area" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">表格预览</h3>
+                    <span id="table-info" class="text-muted" style="font-size:13px;"></span>
+                </div>
+                <div class="table-wrap" style="max-height:320px;overflow:auto;">
+                    <table class="data-table clickable" id="preview-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="card-body" style="border-top:1px solid var(--color-hairline);">
+                    <div class="form-row" style="align-items:center;">
                         <div class="form-group" style="flex:1;">
-                            <label class="form-label" for="top-n">显示前 N 个高频词</label>
-                            <input type="number" id="top-n" class="text-input" value="20" min="5" max="100" style="width:100%;">
+                            <span class="form-label" style="display:inline;margin-right:8px;">已选列：</span>
+                            <span id="selected-column-display" class="badge badge-muted" style="font-size:14px;padding:6px 14px;">未选择（点击表头）</span>
                         </div>
-                        <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="remove-stopwords" checked>
-                                <span>过滤停用词</span>
-                            </label>
+                        <div class="form-group">
+                            <button type="button" id="table-segment-btn" class="btn btn-primary" disabled>对该列分词</button>
                         </div>
                     </div>
-                    <div class="form-actions">
-                        <span class="form-hint">或上传文件：</span>
-                        <input type="file" id="file-input" accept=".txt" class="file-input">
-                        <button type="submit" class="btn btn-primary">开始分词</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Results -->
         <div id="results-container" class="results-area" style="display:none;">
-            <!-- Stats bar -->
+            <!-- Source info -->
             <div class="stats-bar" id="stats-bar"></div>
 
             <!-- Frequency Table -->

@@ -642,6 +642,39 @@ select.text-input {
   background: var(--color-surface-soft);
 }
 
+/* ---- Preview table: clickable headers ---- */
+.data-table.clickable th {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+.data-table.clickable th:hover {
+  background: var(--color-brand-green-soft);
+  color: var(--color-brand-green-dark);
+}
+.data-table.clickable th .col-hint {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  text-transform: none;
+  color: var(--color-muted);
+  letter-spacing: 0;
+  margin-top: 2px;
+}
+
+/* ---- Selected column highlight ---- */
+.data-table th.col-selected {
+  background: var(--color-brand-green) !important;
+  color: var(--color-on-primary) !important;
+}
+.data-table th.col-selected .col-hint {
+  color: rgba(0, 30, 43, 0.6);
+}
+.data-table td.col-selected {
+  background: var(--color-surface-feature);
+}
+
 /* ----------------------------------------------------------
    Results Area
    ---------------------------------------------------------- */
