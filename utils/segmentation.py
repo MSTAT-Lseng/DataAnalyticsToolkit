@@ -114,7 +114,7 @@ def segment_text(
     if top_n and top_n > 0:
         return dict(counter.most_common(top_n))
 
-    return dict(counter)
+    return dict(counter.most_common())
 
 
 def get_top_words(
