@@ -506,11 +506,40 @@ code, pre {
   align-items: flex-end;
 }
 
+/* Row variant: center-align (for checkbox + toggle groups beside inputs) */
+.form-row-center {
+  align-items: center;
+}
+
+/* Inline form-group (no bottom margin, for use in flex rows) */
+.form-group-inline {
+  margin-bottom: 0;
+}
+
+/* Toggle button group (aligned with checkbox) */
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+/* Panel file-upload row */
+.panel-file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+.panel-count {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .form-actions {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
-  margin-top: var(--sp-md);
+  margin-top: var(--sp-xl);
   flex-wrap: wrap;
 }
 
@@ -740,6 +769,36 @@ select.text-input {
 
 .tab-content {
   padding-top: 0;
+}
+.tab-desc {
+  margin-bottom: var(--sp-lg);
+}
+
+/* ---- Preview card layout ---- */
+.preview-scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+.preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  flex-wrap: wrap;
+  border-top: 1px solid var(--color-hairline);
+}
+.preview-col-info {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+.preview-col-label {
+  display: inline;
+  margin-bottom: 0;
+}
+.preview-col-badge {
+  font-size: 14px;
+  padding: 6px 14px;
 }
 
 /* ----------------------------------------------------------

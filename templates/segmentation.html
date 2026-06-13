@@ -12,35 +12,41 @@
 
 <section class="section">
     <div class="container container-narrow">
-        <!-- Tab: Text / Table -->
+
+        <!-- ============================================================
+             Input Card
+             ============================================================ -->
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">输入数据</h3>
             </div>
-            <div class="card-body" style="padding-top: 0;">
+            <div class="card-body" style="padding-top:0;">
+
                 <!-- Tabs -->
-                <div class="tab-bar" style="margin-bottom:20px;">
+                <div class="tab-bar">
                     <button class="tab-btn active" data-tab="text-tab">文本数据</button>
                     <button class="tab-btn" data-tab="table-tab">表格文件</button>
                 </div>
 
-                <!-- Text Input Tab -->
-                <div id="text-tab" class="tab-content">
+                <!-- ========================================================
+                     TEXT TAB
+                     ======================================================== -->
+                <div id="text-tab" class="tab-content" style="margin-top: 20px;">
                     <form id="segmentation-form">
+
+                        <!-- Textarea -->
                         <div class="form-group">
-                            <textarea
-                                id="text-input"
-                                class="textarea"
-                                rows="8"
-                                placeholder="在此粘贴要分词的文本……&#10;&#10;支持中文、英文及混合文本。&#10;示例：今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。"
-                            ></textarea>
+                            <textarea id="text-input" class="textarea" rows="8"
+                                placeholder="在此粘贴要分词的文本……&#10;&#10;支持中文、英文及混合文本。&#10;示例：今天天气真好，我们一起去公园散步吧。人工智能正在改变世界，机器学习是其中的核心技术。"></textarea>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group" style="flex:1;">
+
+                        <!-- Options row: top-n | checkbox + toggles -->
+                        <div class="form-row form-row-center">
+                            <div class="form-group form-group-inline">
                                 <label class="form-label" for="top-n">显示前 N 个高频词</label>
-                                <input type="number" id="top-n" class="text-input" value="20" min="5" max="100" style="width:100%;">
+                                <input type="number" id="top-n" class="text-input" value="20" min="5" max="100" style="width:140px;">
                             </div>
-                            <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
+                            <div class="form-group form-group-inline toggle-group">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="remove-stopwords" checked>
                                     <span>过滤停用词</span>
@@ -49,70 +55,67 @@
                                 <button type="button" class="btn-link dict-toggle" data-target="text-dict-panel">自定义词典 ▸</button>
                             </div>
                         </div>
-                        <!-- Custom Stopwords Panel -->
+
+                        <!-- Stopwords Panel -->
                         <div id="text-stopwords-panel" class="stopwords-panel" style="display:none;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex:1;">
-                                    <label class="form-label" for="text-extra-stopwords">自定义停用词（每行一个）</label>
-                                    <textarea id="text-extra-stopwords" class="textarea" rows="3"
-                                        placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label" for="text-extra-stopwords">自定义停用词（每行一个）</label>
+                                <textarea id="text-extra-stopwords" class="textarea" rows="3"
+                                    placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <span class="form-hint">或上传停用词文件：</span>
-                                    <input type="file" id="text-stopwords-file" accept=".txt" class="file-input">
-                                </div>
-                                <div class="form-group" style="display:flex;align-items:flex-end;">
-                                    <span id="text-stopwords-count" class="text-muted" style="font-size:13px;"></span>
-                                </div>
+                            <div class="panel-file-row">
+                                <span class="form-hint">或上传停用词文件：</span>
+                                <input type="file" id="text-stopwords-file" accept=".txt" class="file-input">
+                                <span id="text-stopwords-count" class="text-muted panel-count"></span>
                             </div>
                         </div>
-                        <!-- Custom Dictionary Panel -->
+
+                        <!-- Dictionary Panel -->
                         <div id="text-dict-panel" class="stopwords-panel" style="display:none;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex:1;">
-                                    <label class="form-label" for="text-extra-dict">自定义词典（每行一个词）</label>
-                                    <textarea id="text-extra-dict" class="textarea" rows="3"
-                                        placeholder="在此输入要作为整体统计的词语，每行一个……&#10;例如：机器学习、自然语言处理"></textarea>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label" for="text-extra-dict">自定义词典（每行一个词）</label>
+                                <textarea id="text-extra-dict" class="textarea" rows="3"
+                                    placeholder="在此输入要作为整体统计的词语，每行一个……&#10;例如：机器学习、自然语言处理"></textarea>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <span class="form-hint">或上传词典文件：</span>
-                                    <input type="file" id="text-dict-file" accept=".txt" class="file-input">
-                                </div>
-                                <div class="form-group" style="display:flex;align-items:flex-end;">
-                                    <span id="text-dict-count" class="text-muted" style="font-size:13px;"></span>
-                                </div>
+                            <div class="panel-file-row">
+                                <span class="form-hint">或上传词典文件：</span>
+                                <input type="file" id="text-dict-file" accept=".txt" class="file-input">
+                                <span id="text-dict-count" class="text-muted panel-count"></span>
                             </div>
                         </div>
+
+                        <!-- Submit row -->
                         <div class="form-actions">
                             <span class="form-hint">或上传文本文件：</span>
                             <input type="file" id="file-input" accept=".txt" class="file-input">
-                            <button type="submit" class="btn btn-primary">开始分词</button>
+                            <button type="submit" class="btn btn-primary" style="margin-left: auto;">开始分词</button>
                         </div>
                     </form>
                 </div>
 
-                <!-- Table File Tab -->
-                <div id="table-tab" class="tab-content" style="display:none;">
+                <!-- ========================================================
+                     TABLE TAB
+                     ======================================================== -->
+                <div id="table-tab" class="tab-content" style="display:none; margin-top: 20px;">
                     <form id="table-form">
-                        <p class="card-desc" style="margin-bottom:16px;">
+
+                        <p class="card-desc tab-desc">
                             上传表格文件（.xls / .xlsx / .csv），点击表头选择要分词的一列，系统将该列所有行的文本合并后进行分词统计。
                         </p>
-                        <div class="form-row">
-                            <div class="form-group" style="flex:1;">
-                                <label class="form-label">选择表格文件</label>
-                                <input type="file" id="table-file-input" accept=".xls,.xlsx,.csv" class="file-input">
-                            </div>
+
+                        <!-- File select -->
+                        <div class="form-group">
+                            <label class="form-label">选择表格文件</label>
+                            <input type="file" id="table-file-input" accept=".xls,.xlsx,.csv" class="file-input">
                         </div>
-                        <div class="form-row" style="margin-top:8px;">
-                            <div class="form-group" style="flex:1;">
+
+                        <!-- Options row: top-n | checkbox + toggles -->
+                        <div class="form-row form-row-center">
+                            <div class="form-group form-group-inline">
                                 <label class="form-label" for="table-top-n">显示前 N 个高频词</label>
                                 <input type="number" id="table-top-n" class="text-input" value="20" min="5" max="100" style="width:140px;">
                             </div>
-                            <div class="form-group" style="display:flex;align-items:flex-end;gap:12px;">
+                            <div class="form-group form-group-inline toggle-group">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="table-remove-stopwords" checked>
                                     <span>过滤停用词</span>
@@ -121,82 +124,71 @@
                                 <button type="button" class="btn-link dict-toggle" data-target="table-dict-panel">自定义词典 ▸</button>
                             </div>
                         </div>
-                        <!-- Custom Stopwords Panel -->
+
+                        <!-- Stopwords Panel -->
                         <div id="table-stopwords-panel" class="stopwords-panel" style="display:none;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex:1;">
-                                    <label class="form-label" for="table-extra-stopwords">自定义停用词（每行一个）</label>
-                                    <textarea id="table-extra-stopwords" class="textarea" rows="3"
-                                        placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label" for="table-extra-stopwords">自定义停用词（每行一个）</label>
+                                <textarea id="table-extra-stopwords" class="textarea" rows="3"
+                                    placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <span class="form-hint">或上传停用词文件：</span>
-                                    <input type="file" id="table-stopwords-file" accept=".txt" class="file-input">
-                                </div>
-                                <div class="form-group" style="display:flex;align-items:flex-end;">
-                                    <span id="table-stopwords-count" class="text-muted" style="font-size:13px;"></span>
-                                </div>
+                            <div class="panel-file-row">
+                                <span class="form-hint">或上传停用词文件：</span>
+                                <input type="file" id="table-stopwords-file" accept=".txt" class="file-input">
+                                <span id="table-stopwords-count" class="text-muted panel-count"></span>
                             </div>
                         </div>
-                        <!-- Custom Dictionary Panel -->
+
+                        <!-- Dictionary Panel -->
                         <div id="table-dict-panel" class="stopwords-panel" style="display:none;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex:1;">
-                                    <label class="form-label" for="table-extra-dict">自定义词典（每行一个词）</label>
-                                    <textarea id="table-extra-dict" class="textarea" rows="3"
-                                        placeholder="在此输入要作为整体统计的词语，每行一个……"></textarea>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label" for="table-extra-dict">自定义词典（每行一个词）</label>
+                                <textarea id="table-extra-dict" class="textarea" rows="3"
+                                    placeholder="在此输入要作为整体统计的词语，每行一个……"></textarea>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <span class="form-hint">或上传词典文件：</span>
-                                    <input type="file" id="table-dict-file" accept=".txt" class="file-input">
-                                </div>
-                                <div class="form-group" style="display:flex;align-items:flex-end;">
-                                    <span id="table-dict-count" class="text-muted" style="font-size:13px;"></span>
-                                </div>
+                            <div class="panel-file-row">
+                                <span class="form-hint">或上传词典文件：</span>
+                                <input type="file" id="table-dict-file" accept=".txt" class="file-input">
+                                <span id="table-dict-count" class="text-muted panel-count"></span>
                             </div>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
 
-        <!-- Table Preview -->
+            </div><!-- /.card-body -->
+        </div><!-- /.card -->
+
+        <!-- ============================================================
+             Table Preview
+             ============================================================ -->
         <div id="table-preview-area" class="results-area" style="display:none;">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">表格预览</h3>
                     <span id="table-info" class="text-muted" style="font-size:13px;"></span>
                 </div>
-                <div class="table-wrap" style="max-height:320px;overflow:auto;">
+                <div class="table-wrap preview-scroll">
                     <table class="data-table clickable" id="preview-table">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="card-body" style="border-top:1px solid var(--color-hairline);">
-                    <div class="form-row" style="align-items:center;">
-                        <div class="form-group" style="flex:1;">
-                            <span class="form-label" style="display:inline;margin-right:8px;">已选列：</span>
-                            <span id="selected-column-display" class="badge badge-muted" style="font-size:14px;padding:6px 14px;">未选择（点击表头）</span>
-                        </div>
-                        <div class="form-group">
-                            <button type="button" id="table-segment-btn" class="btn btn-primary" disabled>对该列分词</button>
-                        </div>
+                <div class="card-body preview-actions">
+                    <div class="preview-col-info">
+                        <span class="form-label preview-col-label">已选列：</span>
+                        <span id="selected-column-display" class="badge badge-muted preview-col-badge">未选择（点击表头）</span>
                     </div>
+                    <button type="button" id="table-segment-btn" class="btn btn-primary" disabled>对该列分词</button>
                 </div>
             </div>
         </div>
 
-        <!-- Results -->
+        <!-- ============================================================
+             Results
+             ============================================================ -->
         <div id="results-container" class="results-area" style="display:none;">
-            <!-- Source info -->
             <div class="stats-bar" id="stats-bar"></div>
 
-            <!-- Frequency Table -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">词频表</h3>
@@ -204,18 +196,13 @@
                 <div class="table-wrap">
                     <table class="data-table" id="freq-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>词语</th>
-                                <th>频次</th>
-                            </tr>
+                            <tr><th>#</th><th>词语</th><th>频次</th></tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Chart -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">高频词柱状图</h3>
@@ -223,7 +210,8 @@
                 <div class="chart-container" id="chart"></div>
             </div>
         </div>
-    </div>
+
+    </div><!-- /.container -->
 </section>
 {% endblock %}
 
