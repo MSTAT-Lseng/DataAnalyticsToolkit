@@ -301,6 +301,142 @@ def _register_routes(app: Flask) -> None:
             app.logger.exception("Segmentation file API error")
             return jsonify({"success": False, "error": str(exc)}), 500
 
+    # ---- 导出全部词频 API（文本） ----
+    @app.route("/api/segmentation/export", methods=["POST"])
+    def api_segmentation_export():
+        """接收与分词相同的 JSON，返回所有词频的 Excel 文件。"""
+        try:
+            import io
+            import openpyxl
+
+            data = request.get_json(force=True)
+            text = (data.get("text") or "").strip()
+            if not text:
+                return jsonify({"success": False, "error": "文本不能为空"}), 400
+
+            remove_stopwords = data.get("remove_stopwords", True)
+            extra_list = data.get("extra_stopwords")
+            extra_stopwords: set[str] | None = None
+            if extra_list and isinstance(extra_list, list):
+                extra_stopwords = {str(w).strip() for w in extra_list if str(w).strip()}
+
+            dict_list = data.get("extra_dict")
+            extra_dict: list[str] | None = None
+            if dict_list and isinstance(dict_list, list):
+                extra_dict = [str(w).strip() for w in dict_list if str(w).strip()]
+
+            from utils.segmentation import segment_text
+
+            # top_n=0 返回全部
+            freq_dict = segment_text(
+                text, top_n=0,
+                remove_stopwords=remove_stopwords,
+                extra_stopwords=extra_stopwords,
+                extra_dict=extra_dict,
+            )
+            words = list(freq_dict.items())
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "词频统计"
+            ws.append(["排名", "词语", "频次"])
+            for i, (word, count) in enumerate(words, 1):
+                ws.append([i, word, count])
+
+            buf = io.BytesIO()
+            wb.save(buf)
+            buf.seek(0)
+
+            from flask import send_file
+            return send_file(
+                buf,
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                as_attachment=True,
+                download_name="词频统计_全部.xlsx",
+            )
+        except Exception as exc:
+            app.logger.exception("Segmentation export API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 导出全部词频 API（表格文件） ----
+    @app.route("/api/segmentation/file/export", methods=["POST"])
+    def api_segmentation_file_export():
+        """接收 Excel 文件 + 列名，返回该列所有词频的 Excel 文件。"""
+        try:
+            import io
+            import openpyxl
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            column = (request.form.get("column") or "").strip()
+            if not column:
+                return jsonify({"success": False, "error": "请选择列"}), 400
+
+            remove_stopwords = request.form.get("remove_stopwords", "true").lower() == "true"
+            extra_raw = (request.form.get("extra_stopwords") or "").strip()
+            extra_stopwords: set[str] | None = None
+            if extra_raw:
+                extra_stopwords = {w.strip() for w in extra_raw.split("\n") if w.strip()}
+            dict_raw = (request.form.get("extra_dict") or "").strip()
+            extra_dict: list[str] | None = None
+            if dict_raw:
+                extra_dict = [w.strip() for w in dict_raw.split("\n") if w.strip()]
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                col_data = df[column].dropna().astype(str)
+                combined = "\n".join(col_data.tolist())
+
+                from utils.segmentation import segment_text
+
+                freq_dict = segment_text(
+                    combined, top_n=0,
+                    remove_stopwords=remove_stopwords,
+                    extra_stopwords=extra_stopwords,
+                    extra_dict=extra_dict,
+                )
+                words = list(freq_dict.items())
+
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                ws.title = "词频统计"
+                ws.append(["排名", "词语", "频次"])
+                for i, (word, count) in enumerate(words, 1):
+                    ws.append([i, word, count])
+
+                buf = io.BytesIO()
+                wb.save(buf)
+                buf.seek(0)
+
+                from flask import send_file
+                return send_file(
+                    buf,
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    as_attachment=True,
+                    download_name=f"词频统计_{column}.xlsx",
+                )
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Segmentation file export API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
     # ---- 词云生成 API ----
     @app.route("/api/wordcloud", methods=["POST"])
     def api_wordcloud():

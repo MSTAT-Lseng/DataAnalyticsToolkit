@@ -30,13 +30,19 @@
     // Results (shared)
     const resultsContainer = document.getElementById('results-container');
     const statsBar = document.getElementById('stats-bar');
-    const freqTableBody = document.querySelector('#freq-table tbody');
+    const freqTableBody = document.getElementById('freq-table-body');
     const chartDiv = document.getElementById('chart');
+    const exportBtn = document.getElementById('export-btn');
+    const foldRow = document.getElementById('fold-row');
+    const foldToggle = document.getElementById('fold-toggle');
 
     // State
     let currentTableFile = null;
     let selectedColumnName = null;
     let selectedColumnIndex = null;
+    let lastSegParams = null;       // for export re-query
+    let allWords = [];              // full word list for fold/export
+    let folded = true;             // whether table is currently folded
 
     // ================================================================
     // Tab Switching
@@ -235,6 +241,15 @@
             const extraStopwords = getExtraStopwords('text');
             const extraDict = getExtraDict('text');
 
+            // Store params for export
+            lastSegParams = {
+                mode: 'text',
+                text: text,
+                remove_stopwords: removeStopwords,
+                extra_stopwords: extraStopwords,
+                extra_dict: extraDict,
+            };
+
             const resp = await fetch('/api/segmentation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -384,18 +399,29 @@
         tableSegmentBtn.textContent = '分词中…';
 
         try {
+            const extraStopwords = getExtraStopwords('table');
+            const extraDict = getExtraDict('table');
+
+            // Store params for export
+            lastSegParams = {
+                mode: 'table',
+                file: currentTableFile,
+                column: selectedColumnName,
+                remove_stopwords: removeStopwords,
+                extra_stopwords: extraStopwords,
+                extra_dict: extraDict,
+            };
+
             const formData = new FormData();
             formData.append('file', currentTableFile);
             formData.append('column', selectedColumnName);
             formData.append('top_n', topN);
             formData.append('remove_stopwords', removeStopwords);
 
-            const extraStopwords = getExtraStopwords('table');
             if (extraStopwords.length > 0) {
                 formData.append('extra_stopwords', extraStopwords.join('\n'));
             }
 
-            const extraDict = getExtraDict('table');
             if (extraDict.length > 0) {
                 formData.append('extra_dict', extraDict.join('\n'));
             }
@@ -429,6 +455,8 @@
     // ================================================================
     function renderResults(data, topN, sourceInfo) {
         const words = data.words;
+        allWords = words;
+        const COLLAPSE_N = 20;
 
         let sourceHtml = '';
         if (sourceInfo) {
@@ -442,13 +470,30 @@
             <span>显示前 ${topN} 个</span>
         `;
 
-        freqTableBody.innerHTML = words.map((w, i) =>
+        // Render table with fold if > COLLAPSE_N
+        const showAll = words.length <= COLLAPSE_N || !folded;
+        const visible = showAll ? words : words.slice(0, COLLAPSE_N);
+
+        freqTableBody.innerHTML = visible.map((w, i) =>
             `<tr>
                 <td>${i + 1}</td>
                 <td><strong>${escapeHtml(w[0])}</strong></td>
                 <td>${w[1]}</td>
             </tr>`
         ).join('');
+
+        // Fold toggle
+        if (words.length > COLLAPSE_N) {
+            foldRow.style.display = '';
+            foldToggle.textContent = folded
+                ? `展开全部 ${words.length} 条 ▸`
+                : '收起 ▴';
+        } else {
+            foldRow.style.display = 'none';
+        }
+
+        // Export button
+        exportBtn.style.display = '';
 
         resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -480,4 +525,89 @@
             font: { family: 'Lexend, sans-serif', color: '#001e2b' }
         }, { responsive: true });
     }
+
+    // ================================================================
+    // Fold / expand toggle
+    // ================================================================
+    foldToggle.addEventListener('click', function () {
+        folded = !folded;
+        // Re-render table rows
+        const showAll = !folded;
+        const visible = showAll ? allWords : allWords.slice(0, 20);
+        freqTableBody.innerHTML = visible.map((w, i) =>
+            `<tr>
+                <td>${i + 1}</td>
+                <td><strong>${escapeHtml(w[0])}</strong></td>
+                <td>${w[1]}</td>
+            </tr>`
+        ).join('');
+        foldToggle.textContent = folded
+            ? `展开全部 ${allWords.length} 条 ▸`
+            : '收起 ▴';
+    });
+
+    // ================================================================
+    // Export all word frequencies to Excel
+    // ================================================================
+    exportBtn.addEventListener('click', async function () {
+        if (!lastSegParams) return;
+
+        exportBtn.disabled = true;
+        exportBtn.textContent = '导出中…';
+
+        try {
+            let resp;
+            if (lastSegParams.mode === 'text') {
+                resp = await fetch('/api/segmentation/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: lastSegParams.text,
+                        remove_stopwords: lastSegParams.remove_stopwords,
+                        extra_stopwords: lastSegParams.extra_stopwords.length > 0 ? lastSegParams.extra_stopwords : undefined,
+                        extra_dict: lastSegParams.extra_dict.length > 0 ? lastSegParams.extra_dict : undefined,
+                    }),
+                });
+            } else {
+                const fd = new FormData();
+                fd.append('file', lastSegParams.file);
+                fd.append('column', lastSegParams.column);
+                fd.append('remove_stopwords', lastSegParams.remove_stopwords);
+                if (lastSegParams.extra_stopwords.length > 0) {
+                    fd.append('extra_stopwords', lastSegParams.extra_stopwords.join('\n'));
+                }
+                if (lastSegParams.extra_dict.length > 0) {
+                    fd.append('extra_dict', lastSegParams.extra_dict.join('\n'));
+                }
+                resp = await fetch('/api/segmentation/file/export', {
+                    method: 'POST',
+                    body: fd,
+                });
+            }
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                alert('导出失败：' + (err.error || '服务器错误'));
+                return;
+            }
+
+            // Trigger download
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = lastSegParams.mode === 'text'
+                ? '词频统计_全部.xlsx'
+                : `词频统计_${lastSegParams.column}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('导出失败：' + err.message);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = '导出全部词频';
+        }
+    });
 })();
