@@ -54,6 +54,145 @@
     });
 
     // ================================================================
+    // Stopwords panel toggles
+    // ================================================================
+    const stopwordsToggles = document.querySelectorAll('.stopwords-toggle');
+    stopwordsToggles.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const panel = document.getElementById(this.dataset.target);
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : '';
+            this.textContent = isOpen ? '自定义停用词 ▸' : '自定义停用词 ▾';
+            this.classList.toggle('open', !isOpen);
+        });
+    });
+
+    // Stopwords file upload → textarea
+    const textStopwordsFile = document.getElementById('text-stopwords-file');
+    const textExtraStopwords = document.getElementById('text-extra-stopwords');
+    const textStopwordsCount = document.getElementById('text-stopwords-count');
+
+    textStopwordsFile.addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            textExtraStopwords.value = content;
+            updateStopwordsCount('text');
+        } catch (err) {
+            alert('读取停用词文件失败：' + err.message);
+        }
+    });
+
+    textExtraStopwords.addEventListener('input', function () {
+        updateStopwordsCount('text');
+    });
+
+    const tableStopwordsFile = document.getElementById('table-stopwords-file');
+    const tableExtraStopwords = document.getElementById('table-extra-stopwords');
+    const tableStopwordsCount = document.getElementById('table-stopwords-count');
+
+    tableStopwordsFile.addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            tableExtraStopwords.value = content;
+            updateStopwordsCount('table');
+        } catch (err) {
+            alert('读取停用词文件失败：' + err.message);
+        }
+    });
+
+    tableExtraStopwords.addEventListener('input', function () {
+        updateStopwordsCount('table');
+    });
+
+    function updateStopwordsCount(tab) {
+        const textarea = tab === 'text' ? textExtraStopwords : tableExtraStopwords;
+        const display = tab === 'text' ? textStopwordsCount : tableStopwordsCount;
+        const words = parseStopwords(textarea.value);
+        display.textContent = words.length > 0 ? `${words.length} 个自定义停用词` : '';
+    }
+
+    function parseStopwords(raw) {
+        if (!raw || !raw.trim()) return [];
+        return raw.split(/[\n\r]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function getExtraStopwords(tab) {
+        const textarea = tab === 'text' ? textExtraStopwords : tableExtraStopwords;
+        return parseStopwords(textarea.value);
+    }
+
+    // ================================================================
+    // Dictionary panel toggles & handlers
+    // ================================================================
+    const dictToggles = document.querySelectorAll('.dict-toggle');
+    dictToggles.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const panel = document.getElementById(this.dataset.target);
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : '';
+            this.textContent = isOpen ? '自定义词典 ▸' : '自定义词典 ▾';
+            this.classList.toggle('open', !isOpen);
+        });
+    });
+
+    // Dictionary file upload → textarea
+    const textDictFile = document.getElementById('text-dict-file');
+    const textExtraDict = document.getElementById('text-extra-dict');
+    const textDictCount = document.getElementById('text-dict-count');
+
+    textDictFile.addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            textExtraDict.value = content;
+            updateDictCount('text');
+        } catch (err) {
+            alert('读取词典文件失败：' + err.message);
+        }
+    });
+
+    textExtraDict.addEventListener('input', function () {
+        updateDictCount('text');
+    });
+
+    const tableDictFile = document.getElementById('table-dict-file');
+    const tableExtraDict = document.getElementById('table-extra-dict');
+    const tableDictCount = document.getElementById('table-dict-count');
+
+    tableDictFile.addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            tableExtraDict.value = content;
+            updateDictCount('table');
+        } catch (err) {
+            alert('读取词典文件失败：' + err.message);
+        }
+    });
+
+    tableExtraDict.addEventListener('input', function () {
+        updateDictCount('table');
+    });
+
+    function updateDictCount(tab) {
+        const textarea = tab === 'text' ? textExtraDict : tableExtraDict;
+        const display = tab === 'text' ? textDictCount : tableDictCount;
+        const words = parseStopwords(textarea.value);
+        display.textContent = words.length > 0 ? `${words.length} 个词典词条` : '';
+    }
+
+    function getExtraDict(tab) {
+        const textarea = tab === 'text' ? textExtraDict : tableExtraDict;
+        return parseStopwords(textarea.value);
+    }
+
+    // ================================================================
     // Text tab — file → textarea
     // ================================================================
     fileInput.addEventListener('change', async function () {
@@ -84,13 +223,18 @@
         resultsContainer.style.display = 'block';
 
         try {
+            const extraStopwords = getExtraStopwords('text');
+            const extraDict = getExtraDict('text');
+
             const resp = await fetch('/api/segmentation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     text: text,
                     top_n: topN,
-                    remove_stopwords: removeStopwords
+                    remove_stopwords: removeStopwords,
+                    extra_stopwords: extraStopwords.length > 0 ? extraStopwords : undefined,
+                    extra_dict: extraDict.length > 0 ? extraDict : undefined,
                 })
             });
             const data = await resp.json();
@@ -236,6 +380,16 @@
             formData.append('column', selectedColumnName);
             formData.append('top_n', topN);
             formData.append('remove_stopwords', removeStopwords);
+
+            const extraStopwords = getExtraStopwords('table');
+            if (extraStopwords.length > 0) {
+                formData.append('extra_stopwords', extraStopwords.join('\n'));
+            }
+
+            const extraDict = getExtraDict('table');
+            if (extraDict.length > 0) {
+                formData.append('extra_dict', extraDict.join('\n'));
+            }
 
             const resp = await fetch('/api/segmentation/file', {
                 method: 'POST',

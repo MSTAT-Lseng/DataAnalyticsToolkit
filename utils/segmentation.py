@@ -63,6 +63,8 @@ def segment_text(
     text: str,
     top_n: int = 50,
     remove_stopwords: bool = True,
+    extra_stopwords: set[str] | None = None,
+    extra_dict: list[str] | None = None,
 ) -> Dict[str, int]:
     """对文本进行分词并返回词频字典。
 
@@ -70,12 +72,21 @@ def segment_text(
         text: 输入文本（中文 / 英文 / 混合）。
         top_n: 仅返回频率最高的前 N 个词（0 或负数表示全部返回）。
         remove_stopwords: 是否过滤停用词。
+        extra_stopwords: 额外的自定义停用词集合，会与内置停用词合并。
+        extra_dict: 自定义词典词条列表，每个词会被 jieba 视为一个整体。
 
     Returns:
         {词语: 频次} 字典，按频次降序排列。
     """
     if not text or not text.strip():
         return {}
+
+    # ---- 加载自定义词典 ----
+    if extra_dict:
+        for word in extra_dict:
+            w = word.strip()
+            if w:
+                jieba.add_word(w)
 
     # ---- 中文分词 ----
     words = jieba.lcut(text)
@@ -92,7 +103,10 @@ def segment_text(
 
     # ---- 停用词过滤 ----
     if remove_stopwords:
-        cleaned = [w for w in cleaned if w.lower() not in STOPWORDS and len(w) > 1]
+        stopwords = STOPWORDS
+        if extra_stopwords:
+            stopwords = STOPWORDS | {w.lower() for w in extra_stopwords}
+        cleaned = [w for w in cleaned if w.lower() not in stopwords and len(w) > 1]
 
     # ---- 统计 ----
     counter = Counter(cleaned)

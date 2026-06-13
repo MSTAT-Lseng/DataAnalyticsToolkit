@@ -96,7 +96,7 @@ def _register_routes(app: Flask) -> None:
     # ---- 分词统计 API ----
     @app.route("/api/segmentation", methods=["POST"])
     def api_segmentation():
-        """接收 JSON {text, top_n, remove_stopwords}，返回词频列表。"""
+        """接收 JSON {text, top_n, remove_stopwords, extra_stopwords, extra_dict}，返回词频列表。"""
         try:
             data = request.get_json(force=True)
             text = (data.get("text") or "").strip()
@@ -106,9 +106,27 @@ def _register_routes(app: Flask) -> None:
             top_n = int(data.get("top_n", 20))
             remove_stopwords = data.get("remove_stopwords", True)
 
+            # 自定义停用词
+            extra_list = data.get("extra_stopwords")
+            extra_stopwords: set[str] | None = None
+            if extra_list and isinstance(extra_list, list):
+                extra_stopwords = {str(w).strip() for w in extra_list if str(w).strip()}
+
+            # 自定义词典
+            dict_list = data.get("extra_dict")
+            extra_dict: list[str] | None = None
+            if dict_list and isinstance(dict_list, list):
+                extra_dict = [str(w).strip() for w in dict_list if str(w).strip()]
+
             from utils.segmentation import segment_text
 
-            freq_dict = segment_text(text, top_n=top_n, remove_stopwords=remove_stopwords)
+            freq_dict = segment_text(
+                text,
+                top_n=top_n,
+                remove_stopwords=remove_stopwords,
+                extra_stopwords=extra_stopwords,
+                extra_dict=extra_dict,
+            )
             words = list(freq_dict.items())  # [(word, count), ...], 已降序
 
             total_count = sum(v for _, v in words)
@@ -188,7 +206,7 @@ def _register_routes(app: Flask) -> None:
     # ---- 表格文件分词 API ----
     @app.route("/api/segmentation/file", methods=["POST"])
     def api_segmentation_file():
-        """接收 Excel 文件 + 列名，对该列所有行进行分词统计。"""
+        """接收 Excel 文件 + 列名 + 可选自定义停用词/词典，对该列所有行进行分词统计。"""
         try:
             import pandas as pd
             import tempfile
@@ -204,6 +222,20 @@ def _register_routes(app: Flask) -> None:
 
             top_n = int(request.form.get("top_n", 20))
             remove_stopwords = request.form.get("remove_stopwords", "true").lower() == "true"
+
+            # 自定义停用词（换行分隔）
+            extra_raw = (request.form.get("extra_stopwords") or "").strip()
+            extra_stopwords: set[str] | None = None
+            if extra_raw:
+                extra_stopwords = {
+                    w.strip() for w in extra_raw.split("\n") if w.strip()
+                }
+
+            # 自定义词典（换行分隔）
+            dict_raw = (request.form.get("extra_dict") or "").strip()
+            extra_dict: list[str] | None = None
+            if dict_raw:
+                extra_dict = [w.strip() for w in dict_raw.split("\n") if w.strip()]
 
             suffix = _os.path.splitext(file.filename)[1].lower()
             if suffix not in (".xls", ".xlsx", ".csv"):
@@ -242,6 +274,8 @@ def _register_routes(app: Flask) -> None:
                     combined_text,
                     top_n=top_n,
                     remove_stopwords=remove_stopwords,
+                    extra_stopwords=extra_stopwords,
+                    extra_dict=extra_dict,
                 )
                 words = list(freq_dict.items())
                 total_count = sum(v for _, v in words)

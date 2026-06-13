@@ -45,6 +45,46 @@
                                     <input type="checkbox" id="remove-stopwords" checked>
                                     <span>过滤停用词</span>
                                 </label>
+                                <button type="button" class="btn-link stopwords-toggle" data-target="text-stopwords-panel">自定义停用词 ▸</button>
+                                <button type="button" class="btn-link dict-toggle" data-target="text-dict-panel">自定义词典 ▸</button>
+                            </div>
+                        </div>
+                        <!-- Custom Stopwords Panel -->
+                        <div id="text-stopwords-panel" class="stopwords-panel" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label" for="text-extra-stopwords">自定义停用词（每行一个）</label>
+                                    <textarea id="text-extra-stopwords" class="textarea" rows="3"
+                                        placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <span class="form-hint">或上传停用词文件：</span>
+                                    <input type="file" id="text-stopwords-file" accept=".txt" class="file-input">
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <span id="text-stopwords-count" class="text-muted" style="font-size:13px;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Custom Dictionary Panel -->
+                        <div id="text-dict-panel" class="stopwords-panel" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label" for="text-extra-dict">自定义词典（每行一个词）</label>
+                                    <textarea id="text-extra-dict" class="textarea" rows="3"
+                                        placeholder="在此输入要作为整体统计的词语，每行一个……&#10;例如：机器学习、自然语言处理"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <span class="form-hint">或上传词典文件：</span>
+                                    <input type="file" id="text-dict-file" accept=".txt" class="file-input">
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <span id="text-dict-count" class="text-muted" style="font-size:13px;"></span>
+                                </div>
                             </div>
                         </div>
                         <div class="form-actions">
@@ -77,6 +117,46 @@
                                     <input type="checkbox" id="table-remove-stopwords" checked>
                                     <span>过滤停用词</span>
                                 </label>
+                                <button type="button" class="btn-link stopwords-toggle" data-target="table-stopwords-panel">自定义停用词 ▸</button>
+                                <button type="button" class="btn-link dict-toggle" data-target="table-dict-panel">自定义词典 ▸</button>
+                            </div>
+                        </div>
+                        <!-- Custom Stopwords Panel -->
+                        <div id="table-stopwords-panel" class="stopwords-panel" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label" for="table-extra-stopwords">自定义停用词（每行一个）</label>
+                                    <textarea id="table-extra-stopwords" class="textarea" rows="3"
+                                        placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <span class="form-hint">或上传停用词文件：</span>
+                                    <input type="file" id="table-stopwords-file" accept=".txt" class="file-input">
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <span id="table-stopwords-count" class="text-muted" style="font-size:13px;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Custom Dictionary Panel -->
+                        <div id="table-dict-panel" class="stopwords-panel" style="display:none;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label class="form-label" for="table-extra-dict">自定义词典（每行一个词）</label>
+                                    <textarea id="table-extra-dict" class="textarea" rows="3"
+                                        placeholder="在此输入要作为整体统计的词语，每行一个……"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <span class="form-hint">或上传词典文件：</span>
+                                    <input type="file" id="table-dict-file" accept=".txt" class="file-input">
+                                </div>
+                                <div class="form-group" style="display:flex;align-items:flex-end;">
+                                    <span id="table-dict-count" class="text-muted" style="font-size:13px;"></span>
+                                </div>
                             </div>
                         </div>
                     </form>
