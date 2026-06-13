@@ -560,10 +560,108 @@ select.text-input {
   appearance: auto;
 }
 
+/* ---- File Input (text-input style, per DESIGN.md) ---- */
+.file-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
 .file-input {
+  position: relative;
   font-family: var(--font-display);
   font-size: 14px;
   color: var(--color-steel);
+  max-width: 260px;
+  /*padding: var(--sp-sm) var(--sp-md);*/
+  /*border: 1px solid var(--color-hairline-strong);*/
+  border-radius: var(--r-md);
+  background: var(--color-canvas);
+  /*height: 44px;*/
+  line-height: 1.30;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.file-input:hover {
+  border-color: var(--color-steel);
+}
+.file-input:focus {
+  border-color: var(--color-brand-green-dark);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+.file-input::file-selector-button {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: transparent;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--r-full);
+  padding: 4px 14px;
+  margin-right: var(--sp-sm);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.file-input::file-selector-button:hover {
+  background: var(--color-surface);
+  border-color: var(--color-steel);
+}
+
+/* ---- Custom Checkbox (brand-green checked, DESIGN.md tokens) ---- */
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-slate);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  padding: var(--sp-xs) var(--sp-sm);
+  border-radius: var(--r-md);
+  transition: background 0.15s ease;
+}
+.checkbox-label:hover {
+  background: var(--color-surface-soft);
+}
+
+.checkbox-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-hairline-strong);
+  border-radius: var(--r-xs);
+  background: var(--color-canvas);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.checkbox-label input[type="checkbox"]::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  transform: scale(0);
+  transition: transform 0.12s ease;
+  background: var(--color-canvas);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.checkbox-label input[type="checkbox"]:checked {
+  background: var(--color-brand-green);
+  border-color: var(--color-brand-green);
+}
+.checkbox-label input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+.checkbox-label input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-brand-green-dark);
+  outline-offset: 2px;
 }
 
 .checkbox-label {
