@@ -136,6 +136,9 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">整体情感评分</h3>
+                        <div class="card-actions">
+                            <button type="button" id="export-btn" class="btn btn-ghost" style="display:none;">导出结果</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="sentiment-overview">
@@ -231,10 +234,15 @@
     const customSentimentFile = document.getElementById('custom-sentiment-file');
     const customSentimentCount = document.getElementById('custom-sentiment-count');
 
+    // Export
+    const exportBtn = document.getElementById('export-btn');
+
     // State
     let currentTableFile = null;
     let selectedColumnName = null;
     let selectedColumnIndex = null;
+    let lastAnalysisMode = null;       // 'text' | 'table'
+    let lastAnalysisResult = null;     // full result object from API
 
     // ================================================================
     // Tab switching
@@ -544,6 +552,10 @@
         resultsContent.style.display = '';
         statsBar.style.display = 'none';
 
+        // Store for export
+        lastAnalysisMode = 'text';
+        lastAnalysisResult = r;
+
         renderOverallScore(r);
 
         const hasCustomWords = r.sentences && r.sentences.some(s => s.custom_words && s.custom_words.length > 0);
@@ -568,6 +580,9 @@
             </tr>`;
         });
 
+        // Show export button
+        exportBtn.style.display = 'inline-flex';
+
         resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -577,6 +592,10 @@
     function renderTableResults(r) {
         resultsLoading.style.display = 'none';
         resultsContent.style.display = '';
+
+        // Store for export
+        lastAnalysisMode = 'table';
+        lastAnalysisResult = r;
 
         // Source info bar
         statsBar.style.display = 'flex';
@@ -620,8 +639,104 @@
         });
         detailCardTitle.textContent = '逐行分析详情';
 
+        // Show export button
+        exportBtn.style.display = 'inline-flex';
+
         resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    // ================================================================
+    // Export button handler
+    // ================================================================
+    exportBtn.addEventListener('click', async function () {
+        if (!lastAnalysisResult) return;
+
+        setButtonLoading(exportBtn, '导出中…');
+
+        try {
+            let exportRows;
+            let summary;
+            let sourceInfo = '';
+
+            if (lastAnalysisMode === 'text') {
+                const r = lastAnalysisResult;
+                // Sentences data with custom_words
+                exportRows = r.sentences.map(s => ({
+                    text: s.text,
+                    score: s.score,
+                    label: s.label,
+                    custom_words: s.custom_words || [],
+                }));
+                summary = {
+                    score: r.score,
+                    label: r.label,
+                    positive_ratio: r.positive_ratio,
+                    neutral_ratio: r.neutral_ratio,
+                    negative_ratio: r.negative_ratio,
+                    count: r.sentence_count,
+                };
+            } else {
+                const r = lastAnalysisResult;
+                // Row data — collect custom_words from all sentences in each row
+                exportRows = r.rows.map(row => {
+                    const allCustomWords = new Set();
+                    if (row.sentences) {
+                        row.sentences.forEach(s => {
+                            if (s.custom_words) s.custom_words.forEach(w => allCustomWords.add(w));
+                        });
+                    }
+                    return {
+                        text: row.text,
+                        score: row.score,
+                        label: row.label,
+                        custom_words: [...allCustomWords],
+                    };
+                });
+                summary = {
+                    score: r.score,
+                    label: r.label,
+                    positive_ratio: r.positive_ratio,
+                    neutral_ratio: r.neutral_ratio,
+                    negative_ratio: r.negative_ratio,
+                    count: r.row_count,
+                };
+                sourceInfo = r.source_column || '';
+            }
+
+            const resp = await fetch('/api/sentiment/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mode: lastAnalysisMode,
+                    rows: exportRows,
+                    summary: summary,
+                    source_info: sourceInfo,
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                alert('导出失败：' + (err.error || '服务器错误'));
+                return;
+            }
+
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = lastAnalysisMode === 'text'
+                ? '情感分析_逐句结果.xlsx'
+                : `情感分析_${sourceInfo || '逐行结果'}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('导出失败：' + err.message);
+        } finally {
+            resetButton(exportBtn, '导出结果');
+        }
+    });
 
     // ================================================================
     // Shared rendering helpers

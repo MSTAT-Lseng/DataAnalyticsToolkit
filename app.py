@@ -711,6 +711,83 @@ def _register_routes(app: Flask) -> None:
             app.logger.exception("Sentiment API error")
             return jsonify({"success": False, "error": str(exc)}), 500
 
+    # ---- 情感分析导出 API ----
+    @app.route("/api/sentiment/export", methods=["POST"])
+    def api_sentiment_export():
+        """接收分析结果 JSON，生成 Excel 文件并返回下载。"""
+        try:
+            import io
+            import openpyxl
+
+            data = request.get_json(force=True)
+            rows = data.get("rows") or data.get("results") or []
+            mode = data.get("mode", "text")
+            summary = data.get("summary") or {}
+            source_info = data.get("source_info", "")
+
+            if not rows:
+                return jsonify({"success": False, "error": "没有可导出的数据"}), 400
+
+            wb = openpyxl.Workbook()
+
+            # ---- Sheet 1: 整体摘要 ----
+            ws_summary = wb.active
+            ws_summary.title = "情感分析摘要"
+            ws_summary.append(["指标", "数值"])
+            ws_summary.append(["整体情感得分", round(summary.get("score", 0), 4)])
+            ws_summary.append(["整体情感标签", summary.get("label", "--")])
+            ws_summary.append(["积极占比", f"{round(summary.get('positive_ratio', 0) * 100, 1)}%"])
+            ws_summary.append(["中性占比", f"{round(summary.get('neutral_ratio', 0) * 100, 1)}%"])
+            ws_summary.append(["消极占比", f"{round(summary.get('negative_ratio', 0) * 100, 1)}%"])
+            ws_summary.append(["分析条目数", summary.get("count", len(rows))])
+            if source_info:
+                ws_summary.append(["数据来源", source_info])
+            ws_summary.column_dimensions["A"].width = 20
+            ws_summary.column_dimensions["B"].width = 20
+
+            # ---- Sheet 2: 详细结果 ----
+            ws_detail = wb.create_sheet(title="详细分析结果")
+            has_custom = any(
+                (r.get("custom_words") and len(r["custom_words"]) > 0)
+                for r in rows
+            )
+            headers = ["#", "文本", "得分", "情感"]
+            if has_custom:
+                headers.append("微调词")
+            ws_detail.append(headers)
+
+            for i, row in enumerate(rows, 1):
+                text = str(row.get("text", ""))
+                score = round(float(row.get("score", 0.5)), 4)
+                label = str(row.get("label", "--"))
+                row_data = [i, text, score, label]
+                if has_custom:
+                    cw = row.get("custom_words", [])
+                    row_data.append(", ".join(cw) if cw else "")
+                ws_detail.append(row_data)
+
+            ws_detail.column_dimensions["A"].width = 6
+            ws_detail.column_dimensions["B"].width = 60
+            ws_detail.column_dimensions["C"].width = 10
+            ws_detail.column_dimensions["D"].width = 10
+            if has_custom:
+                ws_detail.column_dimensions["E"].width = 24
+
+            buf = io.BytesIO()
+            wb.save(buf)
+            buf.seek(0)
+
+            from flask import send_file
+            return send_file(
+                buf,
+                mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                as_attachment=True,
+                download_name="情感分析结果.xlsx",
+            )
+        except Exception as exc:
+            app.logger.exception("Sentiment export API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
     # ---- 情感分析表格预览 API ----
     @app.route("/api/sentiment/preview", methods=["POST"])
     def api_sentiment_preview():
