@@ -6,144 +6,513 @@
     <div class="container">
         <span class="eyebrow eyebrow-dark">自然语言处理</span>
         <h1 class="page-title">情感分析</h1>
-        <p class="page-desc">使用 SnowNLP 对中文文本进行情感倾向分析，自动识别积极、中性、消极情感。</p>
+        <p class="page-desc">使用 SnowNLP 对中文文本进行情感倾向分析，自动识别积极、中性、消极情感。支持粘贴文本和上传表格文件。</p>
     </div>
 </section>
 
 <section class="section">
     <div class="container container-narrow">
-        <!-- Input Form -->
+
+        <!-- ============================================================
+             Input Card
+             ============================================================ -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">文本情感分析</h3>
-                <p class="card-desc">输入文本，系统自动分句并逐句评分（0~1，>0.6 为积极，<0.4 为消极）</p>
+                <h3 class="card-title">输入数据</h3>
             </div>
-            <div class="card-body">
-                <form id="sentiment-form">
-                    <div class="form-group">
-                        <textarea
-                            id="sentiment-text"
-                            class="textarea"
-                            rows="6"
-                            placeholder="在此粘贴要分析的文本……&#10;&#10;示例：今天天气真好，心情非常愉快！但是工作还没做完，有点焦虑。希望一切顺利吧。"
-                        ></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">开始分析</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            <div class="card-body" style="padding-top:0;">
 
-        <!-- Results -->
-        <div id="sentiment-result" class="results-area" style="display:none;">
-            <!-- Overall Score -->
+                <!-- Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="text-tab">文本数据</button>
+                    <button class="tab-btn" data-tab="table-tab">表格文件</button>
+                </div>
+
+                <!-- ========================================================
+                     TEXT TAB
+                     ======================================================== -->
+                <div id="text-tab" class="tab-content" style="margin-top: 20px;">
+                    <form id="sentiment-form">
+                        <div class="form-group">
+                            <textarea
+                                id="sentiment-text"
+                                class="textarea"
+                                rows="6"
+                                placeholder="在此粘贴要分析的文本……&#10;&#10;示例：今天天气真好，心情非常愉快！但是工作还没做完，有点焦虑。希望一切顺利吧。"
+                            ></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <span class="form-hint">或上传文本文件：</span>
+                            <input type="file" id="sentiment-file-input" accept=".txt" class="file-input">
+                            <button type="submit" class="btn btn-primary" style="margin-left: auto;">开始分析</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ========================================================
+                     TABLE TAB
+                     ======================================================== -->
+                <div id="table-tab" class="tab-content" style="display:none; margin-top: 20px;">
+                    <form id="table-form">
+                        <p class="card-desc tab-desc">
+                            上传表格文件（.xls / .xlsx / .csv），点击表头选择要分析的一列，系统将逐行进行情感分析。
+                        </p>
+
+                        <div class="form-group">
+                            <label class="form-label">选择表格文件</label>
+                            <input type="file" id="table-file-input" accept=".xls,.xlsx,.csv" class="file-input">
+                        </div>
+                    </form>
+                </div>
+
+            </div><!-- /.card-body -->
+        </div><!-- /.card -->
+
+        <!-- ============================================================
+             Table Preview & Column Selection
+             ============================================================ -->
+        <div id="table-preview-area" class="results-area" style="display:none;">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">整体情感评分</h3>
+                    <h3 class="card-title">表格预览</h3>
+                    <span id="table-info" class="text-muted" style="font-size:13px;"></span>
                 </div>
-                <div class="card-body">
-                    <div class="sentiment-overview">
-                        <div class="sentiment-score-wrap">
-                            <div class="sentiment-score" id="sentiment-score">--</div>
-                            <div class="sentiment-label" id="sentiment-label">--</div>
-                        </div>
-                        <div class="sentiment-bars">
-                            <div class="sentiment-bar-row">
-                                <span class="bar-label positive">积极</span>
-                                <div class="bar-track"><div class="bar-fill positive" id="bar-positive"></div></div>
-                                <span class="bar-value" id="val-positive">0%</span>
+                <div class="table-wrap preview-scroll">
+                    <table class="data-table clickable" id="preview-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="card-body preview-actions">
+                    <div class="preview-col-info">
+                        <span class="form-label preview-col-label">已选列：</span>
+                        <span id="selected-column-display" class="badge badge-muted preview-col-badge">未选择（点击表头）</span>
+                    </div>
+                    <button type="button" id="table-analyze-btn" class="btn btn-primary" disabled>分析该列情感</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Results (shared between text and table modes)
+             ============================================================ -->
+        <div id="results-container" class="results-area" style="display:none;">
+            <!-- Loading overlay -->
+            <div id="results-loading" class="loading-overlay" style="display:none;">
+                <span class="spinner spinner-lg"></span>
+                <span class="loading-overlay-text" id="results-loading-text">正在分析情感，请稍候…</span>
+            </div>
+
+            <div id="results-content">
+                <!-- Source info bar (for table mode) -->
+                <div class="stats-bar" id="stats-bar" style="display:none;"></div>
+
+                <!-- Overall Score Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">整体情感评分</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="sentiment-overview">
+                            <div class="sentiment-score-wrap">
+                                <div class="sentiment-score" id="sentiment-score">--</div>
+                                <div class="sentiment-label" id="sentiment-label">--</div>
                             </div>
-                            <div class="sentiment-bar-row">
-                                <span class="bar-label neutral">中性</span>
-                                <div class="bar-track"><div class="bar-fill neutral" id="bar-neutral"></div></div>
-                                <span class="bar-value" id="val-neutral">0%</span>
-                            </div>
-                            <div class="sentiment-bar-row">
-                                <span class="bar-label negative">消极</span>
-                                <div class="bar-track"><div class="bar-fill negative" id="bar-negative"></div></div>
-                                <span class="bar-value" id="val-negative">0%</span>
+                            <div class="sentiment-bars">
+                                <div class="sentiment-bar-row">
+                                    <span class="bar-label positive">积极</span>
+                                    <div class="bar-track"><div class="bar-fill positive" id="bar-positive"></div></div>
+                                    <span class="bar-value" id="val-positive">0%</span>
+                                </div>
+                                <div class="sentiment-bar-row">
+                                    <span class="bar-label neutral">中性</span>
+                                    <div class="bar-track"><div class="bar-fill neutral" id="bar-neutral"></div></div>
+                                    <span class="bar-value" id="val-neutral">0%</span>
+                                </div>
+                                <div class="sentiment-bar-row">
+                                    <span class="bar-label negative">消极</span>
+                                    <div class="bar-track"><div class="bar-fill negative" id="bar-negative"></div></div>
+                                    <span class="bar-value" id="val-negative">0%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Sentence Details -->
-            <div class="card" id="sentence-detail-card" style="display:none;">
-                <div class="card-header">
-                    <h3 class="card-title">逐句分析详情</h3>
-                </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr><th>#</th><th>句子</th><th>得分</th><th>情感</th></tr>
-                        </thead>
-                        <tbody id="sentence-table-body"></tbody>
-                    </table>
+                <!-- Detail Table Card -->
+                <div class="card" id="detail-card" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title" id="detail-card-title">逐句分析详情</h3>
+                    </div>
+                    <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table" id="detail-table">
+                            <thead id="detail-table-head">
+                                <tr><th>#</th><th>文本</th><th>得分</th><th>情感</th></tr>
+                            </thead>
+                            <tbody id="detail-table-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+    </div><!-- /.container -->
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/common.js') }}"></script>
 <script>
-document.getElementById('sentiment-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const text = document.getElementById('sentiment-text').value.trim();
-    if (!text) { alert('请输入文本'); return; }
+(function () {
+    'use strict';
 
-    const resultDiv = document.getElementById('sentiment-result');
-    resultDiv.style.display = 'block';
+    // ---- DOM refs ----
+    // Text tab
+    const sentimentForm = document.getElementById('sentiment-form');
+    const sentimentText = document.getElementById('sentiment-text');
+    const sentimentFileInput = document.getElementById('sentiment-file-input');
 
-    try {
-        const resp = await fetch('{{ url_for("api_sentiment") }}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({text: text})
-        });
-        const data = await resp.json();
+    // Table tab
+    const tableFileInput = document.getElementById('table-file-input');
+    const tablePreviewArea = document.getElementById('table-preview-area');
+    const previewTable = document.getElementById('preview-table');
+    const previewTableHead = previewTable.querySelector('thead');
+    const previewTableBody = previewTable.querySelector('tbody');
+    const tableInfo = document.getElementById('table-info');
+    const selectedColumnDisplay = document.getElementById('selected-column-display');
+    const tableAnalyzeBtn = document.getElementById('table-analyze-btn');
 
-        if (data.success) {
-            const r = data.result;
-            document.getElementById('sentiment-score').textContent = r.score.toFixed(2);
-            document.getElementById('sentiment-label').textContent = r.label;
-            document.getElementById('sentiment-label').className = 'sentiment-label ' + (r.label === '积极' ? 'positive' : r.label === '消极' ? 'negative' : 'neutral');
+    // Results (shared)
+    const resultsContainer = document.getElementById('results-container');
+    const resultsLoading = document.getElementById('results-loading');
+    const resultsLoadingText = document.getElementById('results-loading-text');
+    const resultsContent = document.getElementById('results-content');
+    const statsBar = document.getElementById('stats-bar');
+    const sentimentScoreEl = document.getElementById('sentiment-score');
+    const sentimentLabelEl = document.getElementById('sentiment-label');
+    const barPositive = document.getElementById('bar-positive');
+    const valPositive = document.getElementById('val-positive');
+    const barNeutral = document.getElementById('bar-neutral');
+    const valNeutral = document.getElementById('val-neutral');
+    const barNegative = document.getElementById('bar-negative');
+    const valNegative = document.getElementById('val-negative');
+    const detailCard = document.getElementById('detail-card');
+    const detailCardTitle = document.getElementById('detail-card-title');
+    const detailTableHead = document.getElementById('detail-table-head');
+    const detailTableBody = document.getElementById('detail-table-body');
 
-            document.getElementById('bar-positive').style.width = (r.positive_ratio * 100) + '%';
-            document.getElementById('val-positive').textContent = (r.positive_ratio * 100).toFixed(1) + '%';
+    // State
+    let currentTableFile = null;
+    let selectedColumnName = null;
+    let selectedColumnIndex = null;
 
-            document.getElementById('bar-neutral').style.width = (r.neutral_ratio * 100) + '%';
-            document.getElementById('val-neutral').textContent = (r.neutral_ratio * 100).toFixed(1) + '%';
+    // ================================================================
+    // Tab switching
+    // ================================================================
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-            document.getElementById('bar-negative').style.width = (r.negative_ratio * 100) + '%';
-            document.getElementById('val-negative').textContent = (r.negative_ratio * 100).toFixed(1) + '%';
-
-            // Sentence details
-            const detailCard = document.getElementById('sentence-detail-card');
-            const tbody = document.getElementById('sentence-table-body');
-            if (r.sentences && r.sentences.length > 1) {
-                detailCard.style.display = '';
-                tbody.innerHTML = r.sentences.map((s, i) =>
-                    `<tr>
-                        <td>${i + 1}</td>
-                        <td class="sentence-text">${escapeHtml(s.text)}</td>
-                        <td><code>${s.score.toFixed(3)}</code></td>
-                        <td><span class="badge badge-${s.label === '积极' ? 'green' : s.label === '消极' ? 'orange' : 'muted'}">${s.label}</span></td>
-                    </tr>`
-                ).join('');
-            } else {
-                detailCard.style.display = 'none';
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.style.display = 'none');
+            this.classList.add('active');
+            document.getElementById(this.dataset.tab).style.display = '';
+            if (this.dataset.tab === 'text-tab') {
+                tablePreviewArea.style.display = 'none';
+            } else if (this.dataset.tab === 'table-tab' && currentTableFile) {
+                tablePreviewArea.style.display = '';
             }
-        } else {
-            alert('分析失败：' + (data.error || '未知错误'));
+        });
+    });
+
+    // ================================================================
+    // Text tab — .txt file → textarea
+    // ================================================================
+    sentimentFileInput.addEventListener('change', async function () {
+        const file = sentimentFileInput.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            sentimentText.value = content;
+        } catch (err) {
+            alert('读取文件失败：' + err.message);
         }
-    } catch (err) {
-        alert('请求失败：' + err.message);
+    });
+
+    // ================================================================
+    // Text tab — submit
+    // ================================================================
+    sentimentForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const text = sentimentText.value.trim();
+        if (!text) {
+            alert('请输入文本或上传文件');
+            return;
+        }
+
+        const submitBtn = sentimentForm.querySelector('button[type="submit"]');
+
+        // Show loading
+        resultsContainer.style.display = 'block';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        resultsLoadingText.textContent = '正在分析情感，请稍候…';
+        setButtonLoading(submitBtn, '分析中…');
+
+        try {
+            const resp = await fetch('/api/sentiment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('分析失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            renderTextResults(data.result);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
+        } finally {
+            resetButton(submitBtn, '开始分析');
+        }
+    });
+
+    // ================================================================
+    // Table tab — file select → auto-preview
+    // ================================================================
+    tableFileInput.addEventListener('change', async function () {
+        const file = tableFileInput.files[0];
+        currentTableFile = file || null;
+
+        if (!file) {
+            tablePreviewArea.style.display = 'none';
+            resetColumnSelection();
+            return;
+        }
+
+        // Show loading
+        tablePreviewArea.style.display = 'block';
+        previewTableHead.innerHTML = '';
+        previewTableBody.innerHTML = '';
+        tableInfo.innerHTML = '<span class="spinner"></span> 正在解析表格，请稍候…';
+        tableInfo.style.display = 'flex';
+        tableInfo.style.alignItems = 'center';
+        tableInfo.style.gap = '8px';
+        resetColumnSelection();
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const resp = await fetch('/api/sentiment/preview', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('预览失败：' + (data.error || '未知错误'));
+                tablePreviewArea.style.display = 'none';
+                return;
+            }
+
+            renderPreviewTable(data);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            tablePreviewArea.style.display = 'none';
+        }
+    });
+
+    function renderPreviewTable(data) {
+        const columns = data.columns;
+        const rows = data.rows;
+
+        previewTableHead.innerHTML = '<tr>' +
+            columns.map((col, idx) =>
+                `<th data-col-index="${idx}" data-col-name="${escapeHtml(col)}">
+                    ${escapeHtml(col)}
+                </th>`
+            ).join('') +
+            '</tr>';
+
+        previewTableBody.innerHTML = rows.map(row =>
+            '<tr>' + row.map((val, idx) =>
+                `<td data-col-index="${idx}">${escapeHtml(val)}</td>`
+            ).join('') + '</tr>'
+        ).join('');
+
+        tableInfo.textContent =
+            `显示前 ${rows.length} 行，共 ${data.total_rows} 行 · ${columns.length} 列`;
+        tableInfo.style.display = '';
+        tableInfo.style.alignItems = '';
+        tableInfo.style.gap = '';
+
+        // Bind header clicks
+        previewTableHead.querySelectorAll('th').forEach(th => {
+            th.addEventListener('click', function () {
+                const colIdx = parseInt(this.dataset.colIndex);
+                const colName = this.dataset.colName;
+                selectColumn(colIdx, colName);
+            });
+        });
     }
-});
+
+    // ================================================================
+    // Column selection
+    // ================================================================
+    function selectColumn(colIdx, colName) {
+        if (selectedColumnIndex !== null) {
+            previewTableHead.querySelectorAll('th.col-selected').forEach(th => th.classList.remove('col-selected'));
+            previewTableBody.querySelectorAll('td.col-selected').forEach(td => td.classList.remove('col-selected'));
+        }
+
+        selectedColumnIndex = colIdx;
+        selectedColumnName = colName;
+
+        const th = previewTableHead.querySelector(`th[data-col-index="${colIdx}"]`);
+        if (th) th.classList.add('col-selected');
+
+        previewTableBody.querySelectorAll(`td[data-col-index="${colIdx}"]`).forEach(td => {
+            td.classList.add('col-selected');
+        });
+
+        selectedColumnDisplay.textContent = colName;
+        selectedColumnDisplay.className = 'badge badge-green';
+        tableAnalyzeBtn.disabled = false;
+    }
+
+    function resetColumnSelection() {
+        selectedColumnName = null;
+        selectedColumnIndex = null;
+        selectedColumnDisplay.textContent = '未选择（点击表头）';
+        selectedColumnDisplay.className = 'badge badge-muted';
+        tableAnalyzeBtn.disabled = true;
+    }
+
+    // ================================================================
+    // Table tab — analyze button
+    // ================================================================
+    tableAnalyzeBtn.addEventListener('click', async function () {
+        if (!selectedColumnName || !currentTableFile) return;
+
+        // Show loading
+        resultsContainer.style.display = 'block';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        resultsLoadingText.textContent = '正在对「' + selectedColumnName + '」列逐行情感分析，请稍候…';
+        setButtonLoading(tableAnalyzeBtn, '分析中…');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentTableFile);
+            formData.append('column', selectedColumnName);
+
+            const resp = await fetch('/api/sentiment/file', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('分析失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            renderTableResults(data.result);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
+        } finally {
+            resetButton(tableAnalyzeBtn, '分析该列情感');
+        }
+    });
+
+    // ================================================================
+    // Render — text mode results
+    // ================================================================
+    function renderTextResults(r) {
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+        statsBar.style.display = 'none';
+
+        renderOverallScore(r);
+        renderDetailTable(r.sentences, ['#', '句子', '得分', '情感'], function (s, i) {
+            return `<tr>
+                <td>${i + 1}</td>
+                <td class="sentence-text">${escapeHtml(s.text)}</td>
+                <td><code>${s.score.toFixed(3)}</code></td>
+                <td><span class="badge badge-${s.label === '积极' ? 'green' : s.label === '消极' ? 'orange' : 'muted'}">${s.label}</span></td>
+            </tr>`;
+        });
+
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ================================================================
+    // Render — table mode results
+    // ================================================================
+    function renderTableResults(r) {
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+
+        // Source info bar
+        statsBar.style.display = 'flex';
+        statsBar.innerHTML = `
+            <span>来源列：${escapeHtml(r.source_column)}</span>
+            <span>数据行数：${r.row_count}</span>
+            <span>平均得分：${r.score.toFixed(3)}</span>
+        `;
+
+        renderOverallScore(r);
+        renderDetailTable(r.rows, ['#', '文本', '得分', '情感'], function (row, i) {
+            return `<tr>
+                <td>${i + 1}</td>
+                <td class="sentence-text" title="${escapeHtml(row.text)}">${truncateText(row.text, 60)}</td>
+                <td><code>${row.score.toFixed(3)}</code></td>
+                <td><span class="badge badge-${row.label === '积极' ? 'green' : row.label === '消极' ? 'orange' : 'muted'}">${row.label}</span></td>
+            </tr>`;
+        });
+        detailCardTitle.textContent = '逐行分析详情';
+
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ================================================================
+    // Shared rendering helpers
+    // ================================================================
+    function renderOverallScore(r) {
+        sentimentScoreEl.textContent = r.score.toFixed(2);
+        sentimentLabelEl.textContent = r.label;
+        sentimentLabelEl.className = 'sentiment-label ' + (
+            r.label === '积极' ? 'positive' : r.label === '消极' ? 'negative' : 'neutral'
+        );
+
+        barPositive.style.width = (r.positive_ratio * 100) + '%';
+        valPositive.textContent = (r.positive_ratio * 100).toFixed(1) + '%';
+
+        barNeutral.style.width = (r.neutral_ratio * 100) + '%';
+        valNeutral.textContent = (r.neutral_ratio * 100).toFixed(1) + '%';
+
+        barNegative.style.width = (r.negative_ratio * 100) + '%';
+        valNegative.textContent = (r.negative_ratio * 100).toFixed(1) + '%';
+    }
+
+    function renderDetailTable(items, headers, rowFn) {
+        if (items && items.length > 0) {
+            detailCard.style.display = '';
+            detailTableHead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+            detailTableBody.innerHTML = items.map((item, i) => rowFn(item, i)).join('');
+        } else {
+            detailCard.style.display = 'none';
+        }
+    }
+})();
 </script>
 {% endblock %}

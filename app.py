@@ -559,7 +559,7 @@ def _register_routes(app: Flask) -> None:
         请求格式：multipart/form-data
         - file: 词频 Excel 文件（.xls / .xlsx / .csv）
         - max_words: 最大词数（可选，默认 150）
-        - colormap: 配色方案（可选，默认 viridis）
+        - colormap: 配色方案（可选，默认 dark2）
         - bg_color: 背景色（可选，默认 #ffffff）
         """
         try:
@@ -683,6 +683,158 @@ def _register_routes(app: Flask) -> None:
             return jsonify({"success": True, "result": result})
         except Exception as exc:
             app.logger.exception("Sentiment API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 情感分析表格预览 API ----
+    @app.route("/api/sentiment/preview", methods=["POST"])
+    def api_sentiment_preview():
+        """接收 Excel/CSV 文件，返回列名和预览数据。"""
+        try:
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}，请上传 .xls / .xlsx / .csv"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                columns = [str(c) for c in df.columns.tolist()]
+                preview_df = df.head(20).fillna("")
+                rows = preview_df.values.tolist()
+                rows = [[str(v) for v in row] for row in rows]
+
+                app.logger.info(
+                    "Sentiment preview: %d columns, %d preview rows (total %d rows)",
+                    len(columns), len(rows), len(df),
+                )
+
+                return jsonify({
+                    "success": True,
+                    "columns": columns,
+                    "rows": rows,
+                    "total_rows": len(df),
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Sentiment preview API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 情感分析表格文件 API ----
+    @app.route("/api/sentiment/file", methods=["POST"])
+    def api_sentiment_file():
+        """接收 Excel/CSV 文件 + 列名，对该列每行文本进行情感分析。"""
+        try:
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            column = (request.form.get("column") or "").strip()
+            if not column:
+                return jsonify({"success": False, "error": "请选择要分析的列"}), 400
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                if column not in df.columns:
+                    available = [str(c) for c in df.columns.tolist()]
+                    return jsonify({
+                        "success": False,
+                        "error": f"列 '{column}' 不存在。可用列：{', '.join(available)}"
+                    }), 400
+
+                col_data = df[column].dropna().astype(str)
+
+                if len(col_data) == 0:
+                    return jsonify({"success": False, "error": f"列 '{column}' 中没有有效文本"}), 400
+
+                from utils.sentiment_analysis import analyze_sentiment, _score_to_label
+                row_results = []
+                all_scores = []
+                pos_count = 0
+                neg_count = 0
+                neu_count = 0
+
+                for text in col_data.tolist():
+                    result = analyze_sentiment(text)
+                    row_results.append({
+                        "text": text,
+                        "score": result["score"],
+                        "label": result["label"],
+                        "sentences": result["sentences"],
+                    })
+                    all_scores.append(result["score"])
+                    if result["label"] == "积极":
+                        pos_count += 1
+                    elif result["label"] == "消极":
+                        neg_count += 1
+                    else:
+                        neu_count += 1
+
+                n = len(all_scores)
+                avg_score = sum(all_scores) / n if n > 0 else 0.5
+
+                app.logger.info(
+                    "Sentiment file analysis done: column='%s', %d rows, avg_score=%.3f",
+                    column, n, avg_score,
+                )
+
+                return jsonify({
+                    "success": True,
+                    "result": {
+                        "score": round(avg_score, 4),
+                        "label": _score_to_label(avg_score),
+                        "positive_ratio": round(pos_count / n, 4) if n else 0.0,
+                        "negative_ratio": round(neg_count / n, 4) if n else 0.0,
+                        "neutral_ratio": round(neu_count / n, 4) if n else 0.0,
+                        "row_count": n,
+                        "source_column": column,
+                        "rows": row_results,
+                    },
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Sentiment file API error")
             return jsonify({"success": False, "error": str(exc)}), 500
 
     # ---- 回归分析 API（CSV 上传） ----
