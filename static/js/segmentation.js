@@ -29,6 +29,7 @@
 
     // Results (shared)
     const resultsContainer = document.getElementById('results-container');
+    const emptyState = document.getElementById('empty-state');
     const resultsLoading = document.getElementById('results-loading');
     const resultsLoadingText = document.getElementById('results-loading-text');
     const resultsContent = document.getElementById('results-content');
@@ -275,12 +276,14 @@
             if (!data.success) {
                 alert('分词失败：' + (data.error || '未知错误'));
                 resultsContainer.style.display = 'none';
+                emptyState.style.display = '';
                 return;
             }
             renderResults(data, topN, null);
         } catch (err) {
             alert('请求失败：' + err.message);
             resultsContainer.style.display = 'none';
+            emptyState.style.display = '';
         } finally {
             resetButton(submitBtn, '开始分词');
         }
@@ -459,6 +462,7 @@
             if (!data.success) {
                 alert('分词失败：' + (data.error || '未知错误'));
                 resultsContainer.style.display = 'none';
+                emptyState.style.display = '';
                 return;
             }
 
@@ -469,6 +473,7 @@
         } catch (err) {
             alert('请求失败：' + err.message);
             resultsContainer.style.display = 'none';
+            emptyState.style.display = '';
         } finally {
             resetButton(tableSegmentBtn, '对该列分词');
         }
@@ -478,8 +483,9 @@
     // Shared results rendering
     // ================================================================
     function renderResults(data, topN, sourceInfo) {
-        // Hide loading overlay and show results content
+        // Hide loading overlay, empty state, and show results content
         resultsLoading.style.display = 'none';
+        emptyState.style.display = 'none';
         resultsContent.style.display = '';
 
         const words = data.words;

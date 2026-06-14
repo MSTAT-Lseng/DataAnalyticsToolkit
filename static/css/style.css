@@ -1104,7 +1104,7 @@ select.text-input {
   background: var(--color-brand-teal-deep);
   color: var(--color-on-dark);
   padding: var(--sp-section) var(--sp-xxl);
-  margin-top: var(--sp-section-lg);
+  /*margin-top: var(--sp-section-lg);*/
 }
 
 .footer-container {
@@ -1263,6 +1263,34 @@ select.text-input {
 
 .strategy-options {
   animation: stopwordsSlideDown 0.2s ease;
+}
+
+/* ---- Empty State Placeholder ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-section) var(--sp-xl);
+  text-align: center;
+  border: 1px dashed var(--color-hairline-strong);
+  border-radius: var(--r-lg);
+  margin-top: var(--sp-xl);
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--sp-md);
+  opacity: 0.35;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-muted);
+  max-width: 320px;
+  line-height: 1.6;
 }
 
 /* ----------------------------------------------------------

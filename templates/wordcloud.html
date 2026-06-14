@@ -104,6 +104,18 @@
         </div>
 
         <!-- ============================================================
+             Empty State (shown before first analysis)
+             ============================================================ -->
+        <div id="empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+            <p class="empty-state-text">请先前往分词统计导出词频文件，再上传文件生成词云，结果将在此处显示</p>
+        </div>
+
+        <!-- ============================================================
              Result
              ============================================================ -->
         <div id="wordcloud-result" class="results-area" style="display:none;">
@@ -150,6 +162,7 @@
     const bgColorInput = document.getElementById('bg-color');
 
     const resultArea = document.getElementById('wordcloud-result');
+    const emptyState = document.getElementById('empty-state');
     const wcLoading = document.getElementById('wc-loading');
     const wcResultContent = document.getElementById('wc-result-content');
     const wcImage = document.getElementById('wordcloud-image');
@@ -271,11 +284,13 @@
             if (!data.success) {
                 alert('生成失败：' + (data.error || '未知错误'));
                 resultArea.style.display = 'none';
+                emptyState.style.display = '';
                 return;
             }
 
-            // Hide loading, show result
+            // Hide loading, empty state, show result
             wcLoading.style.display = 'none';
+            emptyState.style.display = 'none';
             wcResultContent.style.display = '';
             wcImage.src = 'data:image/png;base64,' + data.image_base64;
             wcImage.style.opacity = '1';
@@ -286,6 +301,7 @@
         } catch (err) {
             alert('请求失败：' + err.message);
             resultArea.style.display = 'none';
+            emptyState.style.display = '';
         } finally {
             resetButton(generateBtn, '生成词云');
         }

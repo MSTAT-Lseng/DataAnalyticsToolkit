@@ -95,6 +95,7 @@
     // ---- Render results ----
     function showResults(r) {
         document.getElementById('regression-result').style.display = '';
+        document.getElementById('empty-state').style.display = 'none';
 
         // Stats
         const r2Pct = (r.r_squared * 100).toFixed(2);

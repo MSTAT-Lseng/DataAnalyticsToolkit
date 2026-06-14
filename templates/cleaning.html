@@ -86,6 +86,16 @@
         </div>
 
         <!-- ============================================================
+             Empty State (shown before first analysis)
+             ============================================================ -->
+        <div id="empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <p class="empty-state-text">请在操作面板中上传文件并配置清洗策略，清洗后数据将在此处显示</p>
+        </div>
+
+        <!-- ============================================================
              Results
              ============================================================ -->
         <div id="results-container" class="results-area" style="display:none;">
@@ -156,6 +166,7 @@
     const processHint = document.getElementById('process-hint');
 
     const resultsContainer = document.getElementById('results-container');
+    const emptyState = document.getElementById('empty-state');
     const resultsLoading = document.getElementById('results-loading');
     const resultsContent = document.getElementById('results-content');
     const statsBar = document.getElementById('stats-bar');
@@ -343,6 +354,7 @@
             if (!data.success) {
                 alert('清洗失败：' + (data.error || '未知错误'));
                 resultsContainer.style.display = 'none';
+                emptyState.style.display = '';
                 return;
             }
 
@@ -350,6 +362,7 @@
         } catch (err) {
             alert('请求失败：' + err.message);
             resultsContainer.style.display = 'none';
+            emptyState.style.display = '';
         } finally {
             resetButton(processBtn, '执行清洗');
         }
@@ -360,6 +373,7 @@
     // ================================================================
     function renderResults(data) {
         resultsLoading.style.display = 'none';
+        emptyState.style.display = 'none';
         resultsContent.style.display = '';
 
         const stats = data.stats;
