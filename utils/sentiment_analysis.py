@@ -2,9 +2,10 @@
 
 使用 SnowNLP 进行中文情感倾向评分。
 支持对单句文本、长文本（按句拆分取平均）、批量文本的情感分析。
+支持自定义情感词微调：用户可手动指定特定词汇的情感值以修正模型偏差。
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from snownlp import SnowNLP
 
@@ -13,7 +14,11 @@ from snownlp import SnowNLP
 # 公共接口
 # ============================================================
 
-def analyze_sentiment(text: str) -> Dict:
+def analyze_sentiment(
+    text: str,
+    custom_sentiment: Optional[Dict[str, float]] = None,
+    custom_weight: float = 0.6,
+) -> Dict:
     """对文本进行情感分析，返回综合结果。
 
     SnowNLP 得分范围 0~1：
@@ -23,6 +28,10 @@ def analyze_sentiment(text: str) -> Dict:
 
     Args:
         text: 输入文本。
+        custom_sentiment: 自定义情感词字典 {词: 情感值(0~1)}。
+                         情感值 > 0.6 为积极倾向，< 0.4 为消极倾向。
+        custom_weight: 自定义词汇权重（0~1），默认 0.6。
+                       值越大，自定义词汇对最终得分的影响越大。
 
     Returns:
         {
@@ -33,35 +42,20 @@ def analyze_sentiment(text: str) -> Dict:
             "neutral_ratio": float,   # 中性句子占比
             "sentence_count": int,    # 有效句子数
             "sentences": [            # 逐句详情
-                {"text": str, "score": float, "label": str},
+                {"text": str, "score": float, "label": str,
+                 "custom_words": [str]},  # 该句中匹配到的自定义词
                 ...
             ],
         }
     """
     if not text or not text.strip():
-        return {
-            "score": 0.5,
-            "label": "中性",
-            "positive_ratio": 0.0,
-            "negative_ratio": 0.0,
-            "neutral_ratio": 0.0,
-            "sentence_count": 0,
-            "sentences": [],
-        }
+        return _empty_result()
 
     # ---- 分句 ----
     raw_sentences = _split_sentences(text)
 
     if not raw_sentences:
-        return {
-            "score": 0.5,
-            "label": "中性",
-            "positive_ratio": 0.0,
-            "negative_ratio": 0.0,
-            "neutral_ratio": 0.0,
-            "sentence_count": 0,
-            "sentences": [],
-        }
+        return _empty_result()
 
     # ---- 逐句评分 ----
     sentence_results: List[Dict] = []
@@ -72,12 +66,23 @@ def analyze_sentiment(text: str) -> Dict:
         if not s or len(s) < 2:
             continue
         try:
-            score = SnowNLP(s).sentiments
+            snownlp_score = SnowNLP(s).sentiments
         except Exception:
-            score = 0.5  # 异常时视为中性
-        label = _score_to_label(score)
-        sentence_results.append({"text": s, "score": round(score, 4), "label": label})
-        scores.append(score)
+            snownlp_score = 0.5
+
+        # 应用自定义情感词微调
+        adjusted_score, matched_words = _apply_custom_sentiment(
+            s, snownlp_score, custom_sentiment, custom_weight
+        )
+
+        label = _score_to_label(adjusted_score)
+        sentence_results.append({
+            "text": s,
+            "score": round(adjusted_score, 4),
+            "label": label,
+            "custom_words": matched_words,
+        })
+        scores.append(adjusted_score)
 
     # ---- 整体统计 ----
     n = len(scores)
@@ -98,21 +103,120 @@ def analyze_sentiment(text: str) -> Dict:
     }
 
 
-def analyze_batch(texts: List[str]) -> List[Dict]:
+def analyze_batch(
+    texts: List[str],
+    custom_sentiment: Optional[Dict[str, float]] = None,
+    custom_weight: float = 0.6,
+) -> List[Dict]:
     """批量分析多条文本的情感。
 
     Args:
         texts: 文本列表。
+        custom_sentiment: 自定义情感词字典。
+        custom_weight: 自定义词汇权重。
 
     Returns:
         每条文本的分析结果列表。
     """
-    return [analyze_sentiment(t) for t in texts]
+    return [analyze_sentiment(t, custom_sentiment=custom_sentiment, custom_weight=custom_weight) for t in texts]
+
+
+def parse_custom_sentiment(raw: str) -> Optional[Dict[str, float]]:
+    """解析用户输入的自定义情感词文本。
+
+    支持的格式（每行一个）：
+        词:情感值    例如  优秀:0.9
+        词 情感值    例如  优秀 0.9
+        词=情感值    例如  优秀=0.9
+
+    Args:
+        raw: 用户输入的原始文本。
+
+    Returns:
+        {词: 情感值} 字典；若无有效条目则返回 None。
+    """
+    import re
+
+    if not raw or not raw.strip():
+        return None
+
+    result: Dict[str, float] = {}
+    for line in raw.strip().split("\n"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # 支持 : = 空格 作为分隔符
+        parts = re.split(r"[:=]+|\s+", line.strip(), maxsplit=1)
+        if len(parts) == 2:
+            word = parts[0].strip()
+            try:
+                score = float(parts[1].strip())
+            except ValueError:
+                continue
+            if word and 0 <= score <= 1:
+                result[word] = score
+
+    return result if result else None
 
 
 # ============================================================
 # 内部辅助
 # ============================================================
+
+def _empty_result() -> Dict:
+    """返回空文本的分析结果。"""
+    return {
+        "score": 0.5,
+        "label": "中性",
+        "positive_ratio": 0.0,
+        "negative_ratio": 0.0,
+        "neutral_ratio": 0.0,
+        "sentence_count": 0,
+        "sentences": [],
+    }
+
+
+def _apply_custom_sentiment(
+    sentence: str,
+    snownlp_score: float,
+    custom_sentiment: Optional[Dict[str, float]],
+    custom_weight: float,
+) -> tuple[float, list[str]]:
+    """将自定义情感词微调应用到单个句子的得分上。
+
+    对句子中的每个自定义情感词，将其情感值与 SnowNLP 得分加权融合：
+        adjusted = snownlp * (1 - w) + avg_custom * w
+
+    Args:
+        sentence: 句子文本。
+        snownlp_score: SnowNLP 原始得分。
+        custom_sentiment: 自定义情感词字典。
+        custom_weight: 自定义词汇权重。
+
+    Returns:
+        (调整后的得分, 匹配到的自定义词列表)
+    """
+    if not custom_sentiment:
+        return snownlp_score, []
+
+    # 查找句子中出现的所有自定义词
+    matched: list[tuple[str, float]] = []
+    for word, sentiment_score in custom_sentiment.items():
+        if word in sentence:
+            matched.append((word, sentiment_score))
+
+    if not matched:
+        return snownlp_score, []
+
+    # 计算匹配词的平均情感值
+    avg_custom = sum(s for _, s in matched) / len(matched)
+
+    # 加权融合
+    adjusted = snownlp_score * (1 - custom_weight) + avg_custom * custom_weight
+    matched_words = [w for w, _ in matched]
+
+    return round(adjusted, 4), matched_words
+
 
 def _split_sentences(text: str) -> list[str]:
     """将中文文本按句号、问号、感叹号、换行等拆分。"""

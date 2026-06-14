@@ -65,6 +65,31 @@
                     </form>
                 </div>
 
+                <!-- ========================================================
+                     Fine-Tuning Panel (shared)
+                     ======================================================== -->
+                <div style="border-top: 1px solid var(--color-hairline-soft); margin-top: var(--sp-lg); padding-top: var(--sp-md);">
+                    <button type="button" class="btn-link panel-toggle" data-target="tuning-panel" data-sibling="">
+                        情感微调 ▸
+                    </button>
+                    <span class="text-muted" style="font-size:12px; margin-left: var(--sp-sm);">手动指定特定词汇的情感倾向，修正模型偏差</span>
+                </div>
+
+                <div id="tuning-panel" class="stopwords-panel" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label" for="custom-sentiment-text">
+                            自定义情感词
+                        </label>
+                        <textarea id="custom-sentiment-text" class="textarea" rows="10"
+                            placeholder="在此输入自定义情感词，每行一个……&#10;&#10;格式：词:情感值（>0.6 积极，<0.4 消极）&#10;示例：&#10;优秀:0.9&#10;糟糕:0.1&#10;一般:0.5&#10;物美价廉:0.85&#10;太差了:0.05"></textarea>
+                    </div>
+                    <div class="panel-file-row">
+                        <span class="form-hint">或上传情感词文件：</span>
+                        <input type="file" id="custom-sentiment-file" accept=".txt" class="file-input">
+                        <span id="custom-sentiment-count" class="text-muted panel-count"></span>
+                    </div>
+                </div>
+
             </div><!-- /.card-body -->
         </div><!-- /.card -->
 
@@ -201,6 +226,11 @@
     const detailTableHead = document.getElementById('detail-table-head');
     const detailTableBody = document.getElementById('detail-table-body');
 
+    // Custom sentiment (fine-tuning)
+    const customSentimentText = document.getElementById('custom-sentiment-text');
+    const customSentimentFile = document.getElementById('custom-sentiment-file');
+    const customSentimentCount = document.getElementById('custom-sentiment-count');
+
     // State
     let currentTableFile = null;
     let selectedColumnName = null;
@@ -225,6 +255,67 @@
             }
         });
     });
+
+    // ================================================================
+    // Fine-tuning panel toggle
+    // ================================================================
+    const panelToggles = document.querySelectorAll('.panel-toggle');
+    panelToggles.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const panel = document.getElementById(this.dataset.target);
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : '';
+            const label = this.dataset.label || this.textContent.trim().replace(/ [▸▾]$/, '');
+            this.dataset.label = label;
+            this.textContent = label + (isOpen ? ' ▸' : ' ▾');
+            this.classList.toggle('open', !isOpen);
+        });
+    });
+
+    // Custom sentiment file upload → textarea
+    customSentimentFile.addEventListener('change', async function () {
+        const file = customSentimentFile.files[0];
+        if (!file) return;
+        try {
+            const content = await readFileAsText(file);
+            customSentimentText.value = content;
+            updateCustomSentimentCount();
+        } catch (err) {
+            alert('读取文件失败：' + err.message);
+        }
+    });
+
+    customSentimentText.addEventListener('input', updateCustomSentimentCount);
+
+    function updateCustomSentimentCount() {
+        const raw = customSentimentText.value;
+        const lines = raw.split('\n').filter(line => {
+            const trimmed = line.trim();
+            return trimmed && !trimmed.startsWith('#') && /[:=\s]/.test(trimmed);
+        });
+        customSentimentCount.textContent = lines.length > 0
+            ? `${lines.length} 个自定义情感词`
+            : '';
+    }
+
+    function getCustomSentiment() {
+        const raw = customSentimentText.value.trim();
+        if (!raw) return null;
+        const result = {};
+        for (const line of raw.split('\n')) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const parts = trimmed.split(/[:=]+|\s+/, 2);
+            if (parts.length === 2) {
+                const word = parts[0].trim();
+                const score = parseFloat(parts[1].trim());
+                if (word && !isNaN(score) && score >= 0 && score <= 1) {
+                    result[word] = score;
+                }
+            }
+        }
+        return Object.keys(result).length > 0 ? result : null;
+    }
 
     // ================================================================
     // Text tab — .txt file → textarea
@@ -261,10 +352,14 @@
         setButtonLoading(submitBtn, '分析中…');
 
         try {
+            const customSentiment = getCustomSentiment();
             const resp = await fetch('/api/sentiment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text })
+                body: JSON.stringify({
+                    text: text,
+                    custom_sentiment: customSentiment || undefined,
+                })
             });
             const data = await resp.json();
 
@@ -413,6 +508,13 @@
             formData.append('file', currentTableFile);
             formData.append('column', selectedColumnName);
 
+            const customSentiment = getCustomSentiment();
+            if (customSentiment) {
+                // Send as raw text for parse_custom_sentiment on backend
+                const raw = customSentimentText.value.trim();
+                formData.append('custom_sentiment', raw);
+            }
+
             const resp = await fetch('/api/sentiment/file', {
                 method: 'POST',
                 body: formData
@@ -443,12 +545,26 @@
         statsBar.style.display = 'none';
 
         renderOverallScore(r);
-        renderDetailTable(r.sentences, ['#', '句子', '得分', '情感'], function (s, i) {
+
+        const hasCustomWords = r.sentences && r.sentences.some(s => s.custom_words && s.custom_words.length > 0);
+        const headers = hasCustomWords
+            ? ['#', '句子', '得分', '情感', '微调词']
+            : ['#', '句子', '得分', '情感'];
+
+        renderDetailTable(r.sentences, headers, function (s, i) {
+            let customCol = '';
+            if (hasCustomWords) {
+                const cw = (s.custom_words && s.custom_words.length > 0)
+                    ? s.custom_words.map(w => `<span class="badge badge-purple" style="font-size:11px;margin:1px;">${escapeHtml(w)}</span>`).join('')
+                    : '';
+                customCol = `<td>${cw}</td>`;
+            }
             return `<tr>
                 <td>${i + 1}</td>
                 <td class="sentence-text">${escapeHtml(s.text)}</td>
                 <td><code>${s.score.toFixed(3)}</code></td>
                 <td><span class="badge badge-${s.label === '积极' ? 'green' : s.label === '消极' ? 'orange' : 'muted'}">${s.label}</span></td>
+                ${customCol}
             </tr>`;
         });
 
@@ -471,12 +587,35 @@
         `;
 
         renderOverallScore(r);
-        renderDetailTable(r.rows, ['#', '文本', '得分', '情感'], function (row, i) {
+
+        // Check if any row has custom words matched
+        const hasCustomWords = r.rows && r.rows.some(row =>
+            row.sentences && row.sentences.some(s => s.custom_words && s.custom_words.length > 0)
+        );
+        const headers = hasCustomWords
+            ? ['#', '文本', '得分', '情感', '微调词']
+            : ['#', '文本', '得分', '情感'];
+
+        renderDetailTable(r.rows, headers, function (row, i) {
+            let customCol = '';
+            if (hasCustomWords) {
+                const allCustomWords = new Set();
+                if (row.sentences) {
+                    row.sentences.forEach(s => {
+                        if (s.custom_words) s.custom_words.forEach(w => allCustomWords.add(w));
+                    });
+                }
+                const cw = allCustomWords.size > 0
+                    ? [...allCustomWords].map(w => `<span class="badge badge-purple" style="font-size:11px;margin:1px;">${escapeHtml(w)}</span>`).join('')
+                    : '';
+                customCol = `<td>${cw}</td>`;
+            }
             return `<tr>
                 <td>${i + 1}</td>
                 <td class="sentence-text" title="${escapeHtml(row.text)}">${truncateText(row.text, 60)}</td>
                 <td><code>${row.score.toFixed(3)}</code></td>
                 <td><span class="badge badge-${row.label === '积极' ? 'green' : row.label === '消极' ? 'orange' : 'muted'}">${row.label}</span></td>
+                ${customCol}
             </tr>`;
         });
         detailCardTitle.textContent = '逐行分析详情';

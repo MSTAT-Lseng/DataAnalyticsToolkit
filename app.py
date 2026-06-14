@@ -662,22 +662,48 @@ def _register_routes(app: Flask) -> None:
     # ---- 情感分析 API ----
     @app.route("/api/sentiment", methods=["POST"])
     def api_sentiment():
-        """接收 JSON {text}，返回情感分析结果。"""
+        """接收 JSON {text, custom_sentiment?}，返回情感分析结果。
+
+        custom_sentiment: 可选，自定义情感词字典 {词: 情感值(0~1)}
+        """
         try:
             data = request.get_json(force=True)
             text = (data.get("text") or "").strip()
             if not text:
                 return jsonify({"success": False, "error": "文本不能为空"}), 400
 
+            # 自定义情感词
+            custom_raw = data.get("custom_sentiment")  # dict 或 list of {word, score}
+            custom_sentiment = None
+            if custom_raw:
+                if isinstance(custom_raw, dict):
+                    custom_sentiment = {
+                        str(k).strip(): float(v)
+                        for k, v in custom_raw.items()
+                        if str(k).strip() and 0 <= float(v) <= 1
+                    }
+                elif isinstance(custom_raw, list):
+                    custom_sentiment = {}
+                    for item in custom_raw:
+                        if isinstance(item, dict):
+                            w = str(item.get("word", "")).strip()
+                            s = float(item.get("score", 0.5))
+                            if w and 0 <= s <= 1:
+                                custom_sentiment[w] = s
+                if not custom_sentiment:
+                    custom_sentiment = None
+
             from utils.sentiment_analysis import analyze_sentiment
 
-            result = analyze_sentiment(text)
+            result = analyze_sentiment(text, custom_sentiment=custom_sentiment)
 
+            custom_count = len(custom_sentiment) if custom_sentiment else 0
             app.logger.info(
-                "Sentiment analysis done: score=%.3f, label=%s, sentences=%d",
+                "Sentiment analysis done: score=%.3f, label=%s, sentences=%d, custom_words=%d",
                 result["score"],
                 result["label"],
                 result["sentence_count"],
+                custom_count,
             )
 
             return jsonify({"success": True, "result": result})
@@ -742,7 +768,13 @@ def _register_routes(app: Flask) -> None:
     # ---- 情感分析表格文件 API ----
     @app.route("/api/sentiment/file", methods=["POST"])
     def api_sentiment_file():
-        """接收 Excel/CSV 文件 + 列名，对该列每行文本进行情感分析。"""
+        """接收 Excel/CSV 文件 + 列名 + 可选自定义情感词，对该列每行文本进行情感分析。
+
+        请求格式：multipart/form-data
+        - file: 表格文件
+        - column: 要分析的列名
+        - custom_sentiment: 可选，自定义情感词文本（每行一个，格式: 词:情感值）
+        """
         try:
             import pandas as pd
             import tempfile
@@ -755,6 +787,13 @@ def _register_routes(app: Flask) -> None:
             column = (request.form.get("column") or "").strip()
             if not column:
                 return jsonify({"success": False, "error": "请选择要分析的列"}), 400
+
+            # 自定义情感词
+            custom_raw = (request.form.get("custom_sentiment") or "").strip()
+            custom_sentiment = None
+            if custom_raw:
+                from utils.sentiment_analysis import parse_custom_sentiment
+                custom_sentiment = parse_custom_sentiment(custom_raw)
 
             suffix = _os.path.splitext(file.filename)[1].lower()
             if suffix not in (".xls", ".xlsx", ".csv"):
@@ -786,6 +825,7 @@ def _register_routes(app: Flask) -> None:
                     return jsonify({"success": False, "error": f"列 '{column}' 中没有有效文本"}), 400
 
                 from utils.sentiment_analysis import analyze_sentiment, _score_to_label
+
                 row_results = []
                 all_scores = []
                 pos_count = 0
@@ -793,7 +833,7 @@ def _register_routes(app: Flask) -> None:
                 neu_count = 0
 
                 for text in col_data.tolist():
-                    result = analyze_sentiment(text)
+                    result = analyze_sentiment(text, custom_sentiment=custom_sentiment)
                     row_results.append({
                         "text": text,
                         "score": result["score"],
@@ -811,9 +851,10 @@ def _register_routes(app: Flask) -> None:
                 n = len(all_scores)
                 avg_score = sum(all_scores) / n if n > 0 else 0.5
 
+                custom_count = len(custom_sentiment) if custom_sentiment else 0
                 app.logger.info(
-                    "Sentiment file analysis done: column='%s', %d rows, avg_score=%.3f",
-                    column, n, avg_score,
+                    "Sentiment file analysis done: column='%s', %d rows, avg_score=%.3f, custom_words=%d",
+                    column, n, avg_score, custom_count,
                 )
 
                 return jsonify({
