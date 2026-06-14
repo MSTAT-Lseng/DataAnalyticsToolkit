@@ -72,6 +72,7 @@ def generate_wordcloud(
         max_words=max_words,
         font_path=font_path,
         random_state=42,
+        max_font_size=110
     )
     wc.generate_from_frequencies(freq_dict)
 

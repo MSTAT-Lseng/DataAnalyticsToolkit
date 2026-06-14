@@ -1235,6 +1235,23 @@ select.text-input {
   flex-shrink: 0;
 }
 
+/* ---- Workflow Steps (ordered list in info card) ---- */
+.workflow-steps {
+  padding-left: var(--sp-xl);
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-slate);
+  line-height: 1.8;
+}
+
+.workflow-steps li {
+  margin-bottom: var(--sp-xxs);
+}
+
+.workflow-steps li .btn-link {
+  font-size: 14px;
+}
+
 /* ----------------------------------------------------------
    Responsive
    ---------------------------------------------------------- */

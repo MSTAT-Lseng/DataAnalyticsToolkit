@@ -6,73 +6,127 @@
     <div class="container">
         <span class="eyebrow eyebrow-dark">可视化</span>
         <h1 class="page-title">词云制作</h1>
-        <p class="page-desc">输入文本或词频数据，自动生成精美词云图，直观展示文本的关键词分布。</p>
+        <p class="page-desc">上传分词统计导出的词频文件，自动生成精美词云图，直观展示文本的关键词分布。</p>
     </div>
 </section>
 
 <section class="section">
     <div class="container container-narrow">
-        <!-- Input Form -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">生成词云</h3>
-                <p class="card-desc">粘贴文本，系统自动分词并生成词云</p>
-            </div>
-            <div class="card-body">
-                <form id="wordcloud-form" method="post" action="{{ url_for('api_wordcloud') }}">
-                    <div class="form-group">
-                        <textarea
-                            name="text"
-                            class="textarea"
-                            rows="6"
-                            placeholder="在此粘贴文本内容……"
-                        ></textarea>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="max-words">最大词数</label>
-                            <input type="number" id="max-words" name="max_words" class="text-input" value="150" min="20" max="500" style="width:120px;">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="colormap">配色方案</label>
-                            <select id="colormap" name="colormap" class="text-input" style="width:180px;">
-                                <option value="viridis">Viridis</option>
-                                <option value="plasma">Plasma</option>
-                                <option value="inferno">Inferno</option>
-                                <option value="magma">Magma</option>
-                                <option value="cividis">Cividis</option>
-                                <option value="cool">Cool</option>
-                                <option value="hot">Hot</option>
-                                <option value="Set2">Set2</option>
-                                <option value="Dark2">Dark2</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="bg-color">背景色</label>
-                            <input type="color" id="bg-color" name="bg_color" class="text-input" value="#ffffff" style="width:80px;height:44px;">
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">生成词云</button>
-                    </div>
-                </form>
+
+        <!-- ============================================================
+             Workflow Guide
+             ============================================================ -->
+        <div class="card" style="background: var(--color-surface-feature); border-color: var(--color-brand-green-soft);">
+            <div class="card-body" style="padding-bottom: var(--sp-lg);">
+                <h4 style="font-size:16px; font-weight:600; color: var(--color-brand-green-dark); margin-bottom: var(--sp-sm);">
+                    📋 操作流程
+                </h4>
+                <ol class="workflow-steps">
+                    <li>
+                        前往
+                        <a href="{{ url_for('segmentation') }}" class="btn-link" style="font-weight:600;">分词统计</a>
+                        工具，粘贴文本或上传表格文件
+                    </li>
+                    <li>点击「开始分词」获取词频结果，然后点击「导出全部词频」下载词频 Excel 文件</li>
+                    <li>回到本页，上传刚才导出的词频文件，即可生成词云图</li>
+                </ol>
             </div>
         </div>
 
-        <!-- Result -->
-        <div id="wordcloud-result" class="results-area" style="display:none;">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">词云预览</h3>
-                    <div class="card-actions">
-                        <a id="download-link" href="#" download="wordcloud.png" class="btn btn-ghost">下载 PNG</a>
+        <!-- ============================================================
+             File Upload & Options
+             ============================================================ -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">上传词频文件</h3>
+                <p class="card-desc">支持分词统计导出的 .xlsx / .xls / .csv 词频文件</p>
+            </div>
+            <div class="card-body">
+
+                <!-- File Upload -->
+                <div class="form-group" style="margin-bottom: var(--sp-lg);">
+                    <label class="form-label">选择词频文件</label>
+                    <input type="file" id="freq-file-input" accept=".xls,.xlsx,.csv" class="file-input">
+                    <span id="freq-file-info" class="text-muted" style="font-size:13px; margin-left: var(--sp-sm);"></span>
+                </div>
+
+                <!-- Preview Table -->
+                <div id="freq-preview-area" style="display:none;">
+                    <div class="card" style="margin-bottom: var(--sp-lg); border: 1px solid var(--color-hairline);">
+                        <div class="card-header" style="padding-bottom: 0;">
+                            <h4 style="font-size:14px; font-weight:600; color: var(--color-steel);">
+                                词频预览 <span id="preview-info" class="text-muted" style="font-weight:400;"></span>
+                            </h4>
+                        </div>
+                        <div class="table-wrap" style="max-height: 260px; overflow-y: auto;">
+                            <table class="data-table" id="freq-preview-table">
+                                <thead>
+                                    <tr><th>#</th><th>词语</th><th>频次</th></tr>
+                                </thead>
+                                <tbody id="freq-preview-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="wordcloud-display">
-                    <img id="wordcloud-image" src="" alt="词云图">
+
+                <!-- Options -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="max-words">最大词数</label>
+                        <input type="number" id="max-words" class="text-input" value="150" min="20" max="500" style="width:120px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="colormap">配色方案</label>
+                        <select id="colormap" class="text-input" style="width:180px;">
+                            <option value="viridis">Viridis</option>
+                            <option value="plasma">Plasma</option>
+                            <option value="inferno">Inferno</option>
+                            <option value="magma">Magma</option>
+                            <option value="cividis">Cividis</option>
+                            <option value="cool">Cool</option>
+                            <option value="hot">Hot</option>
+                            <option value="Set2">Set2</option>
+                            <option value="Dark2">Dark2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bg-color">背景色</label>
+                        <input type="color" id="bg-color" class="text-input" value="#ffffff" style="width:80px;height:44px;">
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="form-actions">
+                    <button type="button" id="generate-btn" class="btn btn-primary" disabled>生成词云</button>
+                    <span id="generate-hint" class="form-hint">请先上传词频文件</span>
                 </div>
             </div>
         </div>
+
+        <!-- ============================================================
+             Result
+             ============================================================ -->
+        <div id="wordcloud-result" class="results-area" style="display:none;">
+            <!-- Loading overlay -->
+            <div id="wc-loading" class="loading-overlay" style="display:none;">
+                <span class="spinner spinner-lg"></span>
+                <span class="loading-overlay-text">正在生成词云，请稍候…</span>
+            </div>
+            <div id="wc-result-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">词云预览</h3>
+                        <div class="card-actions">
+                            <a id="download-link" href="#" download="wordcloud.png" class="btn btn-ghost">下载 PNG</a>
+                        </div>
+                    </div>
+                    <div class="wordcloud-display">
+                        <img id="wordcloud-image" src="" alt="词云图">
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </section>
 {% endblock %}
@@ -80,37 +134,162 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/common.js') }}"></script>
 <script>
-// Wordcloud form handler
-document.getElementById('wordcloud-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const resultDiv = document.getElementById('wordcloud-result');
-    const img = document.getElementById('wordcloud-image');
+(function () {
+    'use strict';
+
+    // ---- DOM refs ----
+    const freqFileInput = document.getElementById('freq-file-input');
+    const freqFileInfo = document.getElementById('freq-file-info');
+    const freqPreviewArea = document.getElementById('freq-preview-area');
+    const freqPreviewBody = document.getElementById('freq-preview-body');
+    const previewInfo = document.getElementById('preview-info');
+    const generateBtn = document.getElementById('generate-btn');
+    const generateHint = document.getElementById('generate-hint');
+    const maxWordsInput = document.getElementById('max-words');
+    const colormapSelect = document.getElementById('colormap');
+    const bgColorInput = document.getElementById('bg-color');
+
+    const resultArea = document.getElementById('wordcloud-result');
+    const wcLoading = document.getElementById('wc-loading');
+    const wcResultContent = document.getElementById('wc-result-content');
+    const wcImage = document.getElementById('wordcloud-image');
     const downloadLink = document.getElementById('download-link');
 
-    resultDiv.style.display = 'block';
-    img.style.opacity = '0.5';
+    // ---- State ----
+    let currentFreqFile = null;
+    let parsedFreqData = null;  // { words: [{word, count}, ...], total: N }
 
-    try {
-        const resp = await fetch(form.action, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await resp.json();
-        if (data.success) {
-            img.src = 'data:image/png;base64,' + data.image_base64;
-            img.style.opacity = '1';
-            downloadLink.href = img.src;
-            downloadLink.style.display = 'inline-flex';
-        } else {
-            img.alt = '生成失败：' + (data.error || '未知错误');
-            img.style.opacity = '1';
+    // ================================================================
+    // File upload → auto-parse & preview
+    // ================================================================
+    freqFileInput.addEventListener('change', async function () {
+        const file = freqFileInput.files[0];
+        currentFreqFile = file || null;
+
+        if (!file) {
+            freqPreviewArea.style.display = 'none';
+            freqFileInfo.textContent = '';
+            generateBtn.disabled = true;
+            generateHint.style.display = '';
+            parsedFreqData = null;
+            return;
         }
-    } catch (err) {
-        img.alt = '请求失败：' + err.message;
-        img.style.opacity = '1';
+
+        // Show loading state
+        freqFileInfo.innerHTML = '<span class="spinner"></span> 正在解析…';
+        freqFileInfo.style.display = 'inline-flex';
+        freqFileInfo.style.alignItems = 'center';
+        freqFileInfo.style.gap = '6px';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const resp = await fetch('/api/wordcloud/preview-freq', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('解析失败：' + (data.error || '未知错误'));
+                freqFileInfo.textContent = '';
+                freqPreviewArea.style.display = 'none';
+                generateBtn.disabled = true;
+                generateHint.style.display = '';
+                parsedFreqData = null;
+                return;
+            }
+
+            parsedFreqData = data;
+            renderFreqPreview(data);
+
+            // Enable generate button
+            generateBtn.disabled = false;
+            generateHint.style.display = 'none';
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            freqFileInfo.textContent = '';
+            freqPreviewArea.style.display = 'none';
+            generateBtn.disabled = true;
+            generateHint.style.display = '';
+            parsedFreqData = null;
+        }
+    });
+
+    function renderFreqPreview(data) {
+        const words = data.words;
+        const previewCount = Math.min(words.length, 20);
+
+        freqFileInfo.textContent = `✓ 已解析 ${data.total} 个词条`;
+        freqFileInfo.style.display = '';
+        freqFileInfo.style.alignItems = '';
+        freqFileInfo.style.gap = '';
+
+        previewInfo.textContent = `（显示前 ${previewCount} 条，共 ${data.total} 条）`;
+
+        freqPreviewBody.innerHTML = words.slice(0, previewCount).map((w, i) =>
+            `<tr>
+                <td>${i + 1}</td>
+                <td><strong>${escapeHtml(w.word)}</strong></td>
+                <td>${w.count}</td>
+            </tr>`
+        ).join('');
+
+        freqPreviewArea.style.display = '';
     }
-});
+
+    // ================================================================
+    // Generate button → call API
+    // ================================================================
+    generateBtn.addEventListener('click', async function () {
+        if (!currentFreqFile) return;
+
+        const maxWords = parseInt(maxWordsInput.value) || 150;
+        const colormap = colormapSelect.value;
+        const bgColor = bgColorInput.value;
+
+        // Show loading state
+        resultArea.style.display = 'block';
+        wcResultContent.style.display = 'none';
+        wcLoading.style.display = '';
+        setButtonLoading(generateBtn, '生成中…');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentFreqFile);
+            formData.append('max_words', maxWords);
+            formData.append('colormap', colormap);
+            formData.append('bg_color', bgColor);
+
+            const resp = await fetch('/api/wordcloud/from-file', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('生成失败：' + (data.error || '未知错误'));
+                resultArea.style.display = 'none';
+                return;
+            }
+
+            // Hide loading, show result
+            wcLoading.style.display = 'none';
+            wcResultContent.style.display = '';
+            wcImage.src = 'data:image/png;base64,' + data.image_base64;
+            wcImage.style.opacity = '1';
+            downloadLink.href = wcImage.src;
+            downloadLink.style.display = 'inline-flex';
+
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            resultArea.style.display = 'none';
+        } finally {
+            resetButton(generateBtn, '生成词云');
+        }
+    });
+})();
 </script>
 {% endblock %}
