@@ -27,6 +27,20 @@
         </div>
 
         <div class="features-grid">
+            <!-- 数据清洗 -->
+            <a href="{{ url_for('cleaning') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/><path d="M7 12h10"/><path d="M11 18h2"/>
+                        <line x1="3" y1="6" x2="8" y2="6"/><line x1="19" y1="12" x2="16" y2="12"/>
+                        <circle cx="10" cy="6" r="1" fill="#00ed64"/><circle cx="14" cy="12" r="1" fill="#00ed64"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">数据清洗</h3>
+                <p class="feature-desc">上传表格文件，按列配置清洗策略：删除空值、去重、字数过滤，导出清洗后数据。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+
             <!-- 分词统计 -->
             <a href="{{ url_for('segmentation') }}" class="feature-card">
                 <div class="feature-icon">

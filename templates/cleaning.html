@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+{% block title %}数据清洗 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow-dark">数据处理</span>
+        <h1 class="page-title">数据清洗</h1>
+        <p class="page-desc">上传表格文件，选择多列并分别配置清洗策略：删除空值行、去重、最小字数过滤，导出清洗后文件。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+
+        <!-- ============================================================
+             Workflow Guide
+             ============================================================ -->
+        <div class="card" style="background: var(--color-surface-feature); border-color: var(--color-brand-green-soft);">
+            <div class="card-body" style="padding-bottom: var(--sp-lg);">
+                <h4 style="font-size:16px; font-weight:600; color: var(--color-brand-green-dark); margin-bottom: var(--sp-sm);">
+                    📋 使用介绍
+                </h4>
+                <ol class="workflow-steps">
+                    <li>
+                        删除空值行：如果该列中该行的值为空，则删除该行
+                    </li>
+                    <li>去重：如果该列中该行的值与该列中其他行的值重复，可选择保留全部行/只保留首行/只保留末行</li>
+                    <li>最小字数：如果该列中该行的数据字数小于用户指定的字数，则删除该行。如果为0则代表不限制字数要求</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             File Upload
+             ============================================================ -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">上传表格文件</h3>
+                <p class="card-desc">支持 .xls / .xlsx / .csv 格式</p>
+            </div>
+            <div class="card-body">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">选择表格文件</label>
+                    <input type="file" id="file-input" accept=".xls,.xlsx,.csv" class="file-input">
+                    <span id="file-info" class="text-muted" style="font-size:13px; margin-left: var(--sp-sm);"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Table Preview & Column Selection
+             ============================================================ -->
+        <div id="preview-area" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">表格预览</h3>
+                    <span id="table-info" class="text-muted" style="font-size:13px;"></span>
+                </div>
+                <div class="table-wrap preview-scroll">
+                    <table class="data-table" id="preview-table">
+                        <thead id="preview-head"></thead>
+                        <tbody id="preview-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Strategy Configuration
+             ============================================================ -->
+        <div id="strategy-area" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">清洗策略配置</h3>
+                    <span class="text-muted" style="font-size:13px;">勾选列名左侧复选框，为每列配置清洗规则</span>
+                </div>
+                <div class="card-body" id="strategy-list">
+                    <!-- Dynamic: one .strategy-item per column -->
+                </div>
+                <div class="card-body preview-actions" style="border-top: 1px solid var(--color-hairline);">
+                    <button type="button" id="process-btn" class="btn btn-primary" disabled>执行清洗</button>
+                    <span id="process-hint" class="form-hint">请至少勾选一列并配置清洗策略</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Results
+             ============================================================ -->
+        <div id="results-container" class="results-area" style="display:none;">
+            <!-- Loading overlay -->
+            <div id="results-loading" class="loading-overlay" style="display:none;">
+                <span class="spinner spinner-lg"></span>
+                <span class="loading-overlay-text">正在执行数据清洗，请稍候…</span>
+            </div>
+
+            <div id="results-content">
+                <!-- Stats -->
+                <div class="stats-bar" id="stats-bar"></div>
+
+                <!-- Steps detail -->
+                <div class="card" id="steps-card" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title">清洗步骤详情</h3>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>步骤</th><th>策略</th><th>操作列</th><th>删除行数</th></tr>
+                            </thead>
+                            <tbody id="steps-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cleaned Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">清洗后数据预览</h3>
+                        <span id="cleaned-info" class="text-muted" style="font-size:13px; margin-top: auto; margin-bottom: auto;"></span>
+                        <div class="card-actions">
+                            <button type="button" id="export-btn" class="btn btn-ghost" style="display:none;">导出清洗结果</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap preview-scroll">
+                        <table class="data-table" id="cleaned-table">
+                            <thead id="cleaned-head"></thead>
+                            <tbody id="cleaned-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ---- DOM refs ----
+    const fileInput = document.getElementById('file-input');
+    const fileInfo = document.getElementById('file-info');
+    const previewArea = document.getElementById('preview-area');
+    const previewHead = document.getElementById('preview-head');
+    const previewBody = document.getElementById('preview-body');
+    const tableInfo = document.getElementById('table-info');
+    const strategyArea = document.getElementById('strategy-area');
+    const strategyList = document.getElementById('strategy-list');
+    const processBtn = document.getElementById('process-btn');
+    const processHint = document.getElementById('process-hint');
+
+    const resultsContainer = document.getElementById('results-container');
+    const resultsLoading = document.getElementById('results-loading');
+    const resultsContent = document.getElementById('results-content');
+    const statsBar = document.getElementById('stats-bar');
+    const stepsCard = document.getElementById('steps-card');
+    const stepsBody = document.getElementById('steps-body');
+    const cleanedHead = document.getElementById('cleaned-head');
+    const cleanedBody = document.getElementById('cleaned-body');
+    const cleanedInfo = document.getElementById('cleaned-info');
+    const exportBtn = document.getElementById('export-btn');
+
+    // ---- State ----
+    let currentFile = null;
+    let columns = [];
+    let totalRows = 0;
+
+    // ================================================================
+    // File upload → auto-preview
+    // ================================================================
+    fileInput.addEventListener('change', async function () {
+        const file = fileInput.files[0];
+        currentFile = file || null;
+
+        if (!file) {
+            resetAll();
+            return;
+        }
+
+        fileInfo.innerHTML = '<span class="spinner"></span> 正在解析表格…';
+        fileInfo.style.display = 'inline-flex';
+        fileInfo.style.alignItems = 'center';
+        fileInfo.style.gap = '6px';
+
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+
+            const resp = await fetch('/api/cleaning/preview', { method: 'POST', body: fd });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('预览失败：' + (data.error || '未知错误'));
+                fileInfo.textContent = '';
+                return;
+            }
+
+            columns = data.columns;
+            totalRows = data.total_rows;
+            renderPreview(data);
+            renderStrategyConfig(columns);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            fileInfo.textContent = '';
+        }
+    });
+
+    function renderPreview(data) {
+        previewHead.innerHTML = '<tr>' +
+            data.columns.map(col =>
+                `<th>${escapeHtml(col)}</th>`
+            ).join('') +
+            '</tr>';
+
+        previewBody.innerHTML = data.rows.map(row =>
+            '<tr>' + row.map(val =>
+                `<td>${escapeHtml(val)}</td>`
+            ).join('') + '</tr>'
+        ).join('');
+
+        tableInfo.textContent = `显示前 ${data.rows.length} 行，共 ${data.total_rows} 行 · ${data.columns.length} 列`;
+        previewArea.style.display = '';
+
+        fileInfo.textContent = `✓ 已加载 ${data.total_rows} 行 · ${data.columns.length} 列`;
+        fileInfo.style.display = '';
+        fileInfo.style.alignItems = '';
+        fileInfo.style.gap = '';
+    }
+
+    // ================================================================
+    // Strategy config — one item per column
+    // ================================================================
+    function renderStrategyConfig(cols) {
+        strategyList.innerHTML = cols.map(col => `
+            <div class="strategy-item" data-column="${escapeHtml(col)}">
+                <label class="checkbox-label" style="margin-bottom: 5px;">
+                    <input type="checkbox" class="col-checkbox" data-column="${escapeHtml(col)}" onchange="updateProcessBtn()">
+                    <strong>${escapeHtml(col)}</strong>
+                </label>
+                <div class="strategy-options" style="display:none; margin-left: 30px; /*margin-bottom: var(--sp-md);*/ padding: var(--sp-sm) var(--sp-md); background: var(--color-surface-soft); border-radius: var(--r-md);">
+                    <div class="form-row" style="flex-wrap: wrap; align-items: center;">
+                        <label class="checkbox-label" style="margin-bottom:0;">
+                            <input type="checkbox" class="opt-remove-null" checked> 删除空值行
+                        </label>
+                        <div class="form-group form-group-inline" style="margin-bottom:0; display:flex; align-items:center; gap:var(--sp-sm);">
+                            <span style="font-size:13px; color:var(--color-steel); white-space:nowrap;">去重：</span>
+                            <select class="opt-dedup text-input" style="width:130px; /*height:36px;*/ font-size:13px;">
+                                <option value="">不处理</option>
+                                <option value="first">保留首行</option>
+                                <option value="last">保留末行</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-group-inline" style="margin-bottom:0; display:flex; align-items:center; gap:var(--sp-sm);">
+                            <span style="font-size:13px; color:var(--color-steel); white-space:nowrap;">最小字数：</span>
+                            <input type="number" class="opt-minlen text-input" value="0" min="0" max="1000" style="width:80px; height:36px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        strategyArea.style.display = '';
+
+        // Bind checkbox toggle → show/hide options
+        strategyList.querySelectorAll('.col-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const item = this.closest('.strategy-item');
+                const options = item.querySelector('.strategy-options');
+                options.style.display = this.checked ? '' : 'none';
+                updateProcessBtn();
+            });
+        });
+
+        // Bind option changes
+        strategyList.querySelectorAll('.opt-remove-null, .opt-dedup, .opt-minlen').forEach(el => {
+            el.addEventListener('change', updateProcessBtn);
+            if (el.tagName === 'INPUT' && el.type === 'number') {
+                el.addEventListener('input', updateProcessBtn);
+            }
+        });
+    }
+
+    // Expose for inline onchange handler
+    window.updateProcessBtn = function () {
+        let hasActive = false;
+        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+            const item = cb.closest('.strategy-item');
+            const removeNull = item.querySelector('.opt-remove-null').checked;
+            const dedup = item.querySelector('.opt-dedup').value;
+            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
+            if (removeNull || dedup || minLen > 0) {
+                hasActive = true;
+            }
+        });
+        processBtn.disabled = !hasActive;
+        processHint.style.display = hasActive ? 'none' : '';
+    };
+
+    // ================================================================
+    // Process button
+    // ================================================================
+    processBtn.addEventListener('click', async function () {
+        if (!currentFile) return;
+
+        // Collect strategies
+        const strategies = {};
+        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+            const col = cb.dataset.column;
+            const item = cb.closest('.strategy-item');
+            const removeNull = item.querySelector('.opt-remove-null').checked;
+            const dedup = item.querySelector('.opt-dedup').value;
+            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
+
+            if (removeNull || dedup || minLen > 0) {
+                strategies[col] = {
+                    remove_null: removeNull,
+                    remove_duplicates: dedup || null,
+                    min_length: minLen > 0 ? minLen : null,
+                };
+            }
+        });
+
+        // Show loading
+        resultsContainer.style.display = 'block';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        setButtonLoading(processBtn, '清洗中…');
+
+        try {
+            const fd = new FormData();
+            fd.append('file', currentFile);
+            fd.append('strategies', JSON.stringify(strategies));
+
+            const resp = await fetch('/api/cleaning/process', { method: 'POST', body: fd });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('清洗失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            renderResults(data);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
+        } finally {
+            resetButton(processBtn, '执行清洗');
+        }
+    });
+
+    // ================================================================
+    // Render results
+    // ================================================================
+    function renderResults(data) {
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+
+        const stats = data.stats;
+        const pct = stats.original_rows > 0
+            ? (stats.removed_rows / stats.original_rows * 100).toFixed(1)
+            : '0';
+
+        statsBar.innerHTML = `
+            <span>原始行数：${stats.original_rows}</span>
+            <span>清洗后：${stats.cleaned_rows}</span>
+            <span>删除：${stats.removed_rows} 行（${pct}%）</span>
+        `;
+
+        // Steps detail
+        if (stats.steps && stats.steps.length > 0) {
+            stepsCard.style.display = '';
+            stepsBody.innerHTML = stats.steps.map((s, i) =>
+                `<tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${escapeHtml(s.strategy)}</strong></td>
+                    <td>${escapeHtml(s.column)}</td>
+                    <td>${s.removed}</td>
+                </tr>`
+            ).join('');
+        } else {
+            stepsCard.style.display = 'none';
+        }
+
+        // Cleaned preview
+        cleanedHead.innerHTML = '<tr>' +
+            data.columns.map(col => `<th>${escapeHtml(col)}</th>`).join('') +
+            '</tr>';
+
+        cleanedBody.innerHTML = data.preview_rows.map(row =>
+            '<tr>' + row.map(val => `<td>${escapeHtml(val)}</td>`).join('') + '</tr>'
+        ).join('');
+
+        cleanedInfo.textContent =
+            `显示前 ${data.preview_rows.length} 行，共 ${stats.cleaned_rows} 行`;
+
+        exportBtn.style.display = 'inline-flex';
+
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ================================================================
+    // Export button
+    // ================================================================
+    exportBtn.addEventListener('click', async function () {
+        if (!currentFile) return;
+
+        // Re-collect strategies
+        const strategies = {};
+        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
+            const col = cb.dataset.column;
+            const item = cb.closest('.strategy-item');
+            const removeNull = item.querySelector('.opt-remove-null').checked;
+            const dedup = item.querySelector('.opt-dedup').value;
+            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
+
+            if (removeNull || dedup || minLen > 0) {
+                strategies[col] = {
+                    remove_null: removeNull,
+                    remove_duplicates: dedup || null,
+                    min_length: minLen > 0 ? minLen : null,
+                };
+            }
+        });
+
+        setButtonLoading(exportBtn, '导出中…');
+
+        try {
+            const fd = new FormData();
+            fd.append('file', currentFile);
+            fd.append('strategies', JSON.stringify(strategies));
+
+            const resp = await fetch('/api/cleaning/export', { method: 'POST', body: fd });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                alert('导出失败：' + (err.error || '服务器错误'));
+                return;
+            }
+
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '清洗后数据.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('导出失败：' + err.message);
+        } finally {
+            resetButton(exportBtn, '导出清洗结果');
+        }
+    });
+
+    // ================================================================
+    // Helpers
+    // ================================================================
+    function resetAll() {
+        previewArea.style.display = 'none';
+        strategyArea.style.display = 'none';
+        resultsContainer.style.display = 'none';
+        fileInfo.textContent = '';
+        columns = [];
+        totalRows = 0;
+        processBtn.disabled = true;
+        processHint.style.display = '';
+        exportBtn.style.display = 'none';
+    }
+})();
+</script>
+{% endblock %}

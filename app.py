@@ -89,6 +89,11 @@ def _register_routes(app: Flask) -> None:
         """回归分析页面。"""
         return render_template("regression.html")
 
+    @app.route("/cleaning")
+    def cleaning():
+        """数据清洗页面。"""
+        return render_template("cleaning.html")
+
     # ================================================================
     # API 端点
     # ================================================================
@@ -1023,6 +1028,231 @@ def _register_routes(app: Flask) -> None:
             return jsonify({"success": True, "result": result})
         except Exception as exc:
             app.logger.exception("Regression manual API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 数据清洗预览 API ----
+    @app.route("/api/cleaning/preview", methods=["POST"])
+    def api_cleaning_preview():
+        """接收表格文件，返回列名和预览数据。"""
+        try:
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}，请上传 .xls / .xlsx / .csv"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                columns = [str(c) for c in df.columns.tolist()]
+                preview_df = df.head(20).fillna("")
+                rows = preview_df.values.tolist()
+                rows = [[str(v) for v in row] for row in rows]
+
+                app.logger.info(
+                    "Cleaning preview: %d columns, %d preview rows (total %d rows)",
+                    len(columns), len(rows), len(df),
+                )
+
+                return jsonify({
+                    "success": True,
+                    "columns": columns,
+                    "rows": rows,
+                    "total_rows": len(df),
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Cleaning preview API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 数据清洗执行 API ----
+    @app.route("/api/cleaning/process", methods=["POST"])
+    def api_cleaning_process():
+        """接收表格文件 + 清洗策略，执行清洗并返回结果预览。
+
+        请求格式：multipart/form-data
+        - file: 表格文件
+        - strategies: JSON 字符串，格式 {"列名": {"remove_null": bool, ...}, ...}
+        """
+        try:
+            import json as _json
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            strategies_raw = (request.form.get("strategies") or "").strip()
+            if not strategies_raw:
+                return jsonify({"success": False, "error": "请至少为一列配置清洗策略"}), 400
+
+            try:
+                strategies = _json.loads(strategies_raw)
+            except _json.JSONDecodeError:
+                return jsonify({"success": False, "error": "策略配置格式错误"}), 400
+
+            # 检查是否至少有一个有效策略
+            has_strategy = False
+            for col, config in strategies.items():
+                if config.get("remove_null") or \
+                   config.get("remove_duplicates") in ("first", "last") or \
+                   (config.get("min_length") and config["min_length"] > 0):
+                    has_strategy = True
+                    break
+            if not has_strategy:
+                return jsonify({"success": False, "error": "请至少为一列配置清洗策略"}), 400
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                from utils.cleaning import clean_dataframe
+
+                cleaned_df, stats = clean_dataframe(df, strategies)
+
+                # 预览前 20 行
+                preview_rows = cleaned_df.head(20).fillna("").values.tolist()
+                preview_rows = [[str(v) for v in row] for row in preview_rows]
+                columns = [str(c) for c in cleaned_df.columns.tolist()]
+
+                app.logger.info(
+                    "Cleaning done: %d → %d rows (%d removed), %d steps",
+                    stats["original_rows"], stats["cleaned_rows"],
+                    stats["removed_rows"], len(stats["steps"]),
+                )
+
+                return jsonify({
+                    "success": True,
+                    "columns": columns,
+                    "preview_rows": preview_rows,
+                    "stats": stats,
+                })
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Cleaning process API error")
+            return jsonify({"success": False, "error": str(exc)}), 500
+
+    # ---- 数据清洗导出 API ----
+    @app.route("/api/cleaning/export", methods=["POST"])
+    def api_cleaning_export():
+        """接收表格文件 + 清洗策略，返回清洗后的 Excel 文件。"""
+        try:
+            import io
+            import json as _json
+            import openpyxl
+            import pandas as pd
+            import tempfile
+            import os as _os
+
+            file = request.files.get("file")
+            if not file or file.filename == "":
+                return jsonify({"success": False, "error": "请上传表格文件"}), 400
+
+            strategies_raw = (request.form.get("strategies") or "").strip()
+            strategies = _json.loads(strategies_raw) if strategies_raw else {}
+
+            suffix = _os.path.splitext(file.filename)[1].lower()
+            if suffix not in (".xls", ".xlsx", ".csv"):
+                return jsonify({
+                    "success": False,
+                    "error": f"不支持的文件格式：{suffix}"
+                }), 400
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                if suffix == ".csv":
+                    df = pd.read_csv(tmp_path)
+                else:
+                    df = pd.read_excel(tmp_path, engine="openpyxl" if suffix == ".xlsx" else "xlrd")
+
+                from utils.cleaning import clean_dataframe
+
+                cleaned_df, stats = clean_dataframe(df, strategies)
+
+                wb = openpyxl.Workbook()
+
+                # Sheet 1: 清洗统计
+                ws_stats = wb.active
+                ws_stats.title = "清洗统计"
+                ws_stats.append(["指标", "数值"])
+                ws_stats.append(["原始行数", stats["original_rows"]])
+                ws_stats.append(["清洗后行数", stats["cleaned_rows"]])
+                ws_stats.append(["删除行数", stats["removed_rows"]])
+                ws_stats.append([""])
+                ws_stats.append(["清洗步骤", "列", "删除行数", "说明"])
+                for step in stats["steps"]:
+                    ws_stats.append([
+                        step["strategy"], step["column"],
+                        step["removed"], step["reason"],
+                    ])
+                ws_stats.column_dimensions["A"].width = 18
+                ws_stats.column_dimensions["B"].width = 16
+                ws_stats.column_dimensions["C"].width = 12
+                ws_stats.column_dimensions["D"].width = 40
+
+                # Sheet 2: 清洗后数据
+                ws_data = wb.create_sheet(title="清洗后数据")
+                ws_data.append([str(c) for c in cleaned_df.columns.tolist()])
+                for _, row in cleaned_df.iterrows():
+                    ws_data.append([str(v) if pd.notna(v) else "" for v in row.tolist()])
+
+                buf = io.BytesIO()
+                wb.save(buf)
+                buf.seek(0)
+
+                from flask import send_file
+                return send_file(
+                    buf,
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    as_attachment=True,
+                    download_name="清洗后数据.xlsx",
+                )
+            finally:
+                if _os.path.exists(tmp_path):
+                    _os.unlink(tmp_path)
+
+        except Exception as exc:
+            app.logger.exception("Cleaning export API error")
             return jsonify({"success": False, "error": str(exc)}), 500
 
 

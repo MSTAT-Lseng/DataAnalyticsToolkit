@@ -1252,6 +1252,19 @@ select.text-input {
   font-size: 14px;
 }
 
+/* ---- Strategy Item (data cleaning) ---- */
+.strategy-item {
+  padding: var(--sp-sm) 0;
+}
+
+.strategy-item + .strategy-item {
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.strategy-options {
+  animation: stopwordsSlideDown 0.2s ease;
+}
+
 /* ----------------------------------------------------------
    Responsive
    ---------------------------------------------------------- */

@@ -33,6 +33,7 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('segmentation') }}" class="nav-link">分词统计</a></li>
                 <li><a href="{{ url_for('wordcloud') }}" class="nav-link">词云制作</a></li>
+                <li><a href="{{ url_for('cleaning') }}" class="nav-link">数据清洗</a></li>
                 <li><a href="{{ url_for('sentiment') }}" class="nav-link">情感分析</a></li>
                 <li><a href="{{ url_for('regression') }}" class="nav-link">回归分析</a></li>
             </ul>
@@ -50,6 +51,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <h4 class="footer-heading">工具</h4>
+                    <a href="{{ url_for('cleaning') }}" class="footer-link">数据清洗</a>
                     <a href="{{ url_for('segmentation') }}" class="footer-link">分词统计</a>
                     <a href="{{ url_for('wordcloud') }}" class="footer-link">词云制作</a>
                 </div>
