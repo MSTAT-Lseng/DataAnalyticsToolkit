@@ -29,6 +29,9 @@
 
     // Results (shared)
     const resultsContainer = document.getElementById('results-container');
+    const resultsLoading = document.getElementById('results-loading');
+    const resultsLoadingText = document.getElementById('results-loading-text');
+    const resultsContent = document.getElementById('results-content');
     const statsBar = document.getElementById('stats-bar');
     const freqTableBody = document.getElementById('freq-table-body');
     const chartDiv = document.getElementById('chart');
@@ -235,7 +238,14 @@
         const topN = parseInt(topNInput.value) || 20;
         const removeStopwords = removeStopwordsCheck.checked;
 
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        // Show loading states
         resultsContainer.style.display = 'block';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        resultsLoadingText.textContent = '正在分词，请稍候…';
+        setButtonLoading(submitBtn, '分词中…');
 
         try {
             const extraStopwords = getExtraStopwords('text');
@@ -264,11 +274,15 @@
             const data = await resp.json();
             if (!data.success) {
                 alert('分词失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
                 return;
             }
             renderResults(data, topN, null);
         } catch (err) {
             alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
+        } finally {
+            resetButton(submitBtn, '开始分词');
         }
     });
 
@@ -285,11 +299,14 @@
             return;
         }
 
-        // Immediately start preview
+        // Immediately show loading state in preview area
         tablePreviewArea.style.display = 'block';
-        previewTableHead.innerHTML = '<tr><th colspan="99">解析中…</th></tr>';
+        previewTableHead.innerHTML = '';
         previewTableBody.innerHTML = '';
-        tableInfo.textContent = '正在加载…';
+        tableInfo.innerHTML = '<span class="spinner"></span> 正在解析表格，请稍候…';
+        tableInfo.style.display = 'flex';
+        tableInfo.style.alignItems = 'center';
+        tableInfo.style.gap = '8px';
         resetColumnSelection();
 
         try {
@@ -338,6 +355,9 @@
 
         tableInfo.textContent =
             `显示前 ${rows.length} 行，共 ${data.total_rows} 行 · ${columns.length} 列`;
+        tableInfo.style.display = '';
+        tableInfo.style.alignItems = '';
+        tableInfo.style.gap = '';
 
         // Bind header click handlers
         previewTableHead.querySelectorAll('th').forEach(th => {
@@ -395,8 +415,12 @@
         const topN = parseInt(tableTopN.value) || 20;
         const removeStopwords = tableRemoveStopwords.checked;
 
-        tableSegmentBtn.disabled = true;
-        tableSegmentBtn.textContent = '分词中…';
+        // Show loading states
+        resultsContainer.style.display = 'block';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        resultsLoadingText.textContent = '正在对「' + selectedColumnName + '」列分词，请稍候…';
+        setButtonLoading(tableSegmentBtn, '分词中…');
 
         try {
             const extraStopwords = getExtraStopwords('table');
@@ -434,19 +458,19 @@
 
             if (!data.success) {
                 alert('分词失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
                 return;
             }
 
-            resultsContainer.style.display = 'block';
             renderResults(data, topN, {
                 sourceColumn: data.source_column,
                 sourceRows: data.source_rows,
             });
         } catch (err) {
             alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
         } finally {
-            tableSegmentBtn.disabled = false;
-            tableSegmentBtn.textContent = '对该列分词';
+            resetButton(tableSegmentBtn, '对该列分词');
         }
     });
 
@@ -454,6 +478,10 @@
     // Shared results rendering
     // ================================================================
     function renderResults(data, topN, sourceInfo) {
+        // Hide loading overlay and show results content
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+
         const words = data.words;
         allWords = words;
         const COLLAPSE_N = 20;
@@ -552,8 +580,7 @@
     exportBtn.addEventListener('click', async function () {
         if (!lastSegParams) return;
 
-        exportBtn.disabled = true;
-        exportBtn.textContent = '导出中…';
+        setButtonLoading(exportBtn, '导出中…');
 
         try {
             let resp;
@@ -606,8 +633,7 @@
         } catch (err) {
             alert('导出失败：' + err.message);
         } finally {
-            exportBtn.disabled = false;
-            exportBtn.textContent = '导出全部词频';
+            resetButton(exportBtn, '导出全部词频');
         }
     });
 })();

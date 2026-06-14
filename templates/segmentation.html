@@ -187,33 +187,41 @@
              Results
              ============================================================ -->
         <div id="results-container" class="results-area" style="display:none;">
-            <div class="stats-bar" id="stats-bar"></div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">词频表</h3>
-                    <div class="card-actions">
-                        <button type="button" id="export-btn" class="btn btn-ghost" style="display:none;">导出全部词频</button>
-                    </div>
-                </div>
-                <div class="table-wrap">
-                    <table class="data-table" id="freq-table">
-                        <thead>
-                            <tr><th>#</th><th>词语</th><th>频次</th></tr>
-                        </thead>
-                        <tbody id="freq-table-body"></tbody>
-                    </table>
-                </div>
-                <div id="fold-row" class="fold-toggle-row" style="display:none;">
-                    <button type="button" id="fold-toggle" class="btn-link">展开全部 ▸</button>
-                </div>
+            <!-- Loading overlay (shown while waiting for API response) -->
+            <div id="results-loading" class="loading-overlay" style="display:none;">
+                <span class="spinner spinner-lg"></span>
+                <span class="loading-overlay-text" id="results-loading-text">正在分词，请稍候…</span>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">高频词柱状图</h3>
+            <div id="results-content">
+                <div class="stats-bar" id="stats-bar"></div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">词频表</h3>
+                        <div class="card-actions">
+                            <button type="button" id="export-btn" class="btn btn-ghost" style="display:none;">导出全部词频</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table" id="freq-table">
+                            <thead>
+                                <tr><th>#</th><th>词语</th><th>频次</th></tr>
+                            </thead>
+                            <tbody id="freq-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="fold-row" class="fold-toggle-row" style="display:none;">
+                        <button type="button" id="fold-toggle" class="btn-link">展开全部 ▸</button>
+                    </div>
                 </div>
-                <div class="chart-container" id="chart"></div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">高频词柱状图</h3>
+                    </div>
+                    <div class="chart-container" id="chart"></div>
+                </div>
             </div>
         </div>
 

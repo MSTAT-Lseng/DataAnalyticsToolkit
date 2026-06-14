@@ -68,3 +68,58 @@ function hideSpinner() {
     const spinner = document.getElementById('loading-spinner');
     if (spinner) spinner.remove();
 }
+
+/**
+ * 按钮进入加载状态：禁用、显示旋转图标、替换文字
+ * @param {HTMLElement} btn - 按钮元素
+ * @param {string} loadingText - 加载中显示的文字
+ */
+function setButtonLoading(btn, loadingText) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn._originalText = btn.textContent;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = `<span class="spinner spinner-light"></span>${loadingText}`;
+}
+
+/**
+ * 恢复按钮到正常状态
+ * @param {HTMLElement} btn - 按钮元素
+ * @param {string} [text] - 恢复后的文字，不传则使用加载前文字
+ */
+function resetButton(btn, text) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.textContent = text || btn._originalText || btn.textContent;
+    delete btn._originalText;
+}
+
+/**
+ * 在容器内显示加载覆盖层
+ * @param {HTMLElement} container - 容器元素
+ * @param {string} message - 加载提示文字
+ */
+function showLoadingOverlay(container, message) {
+    if (!container) return;
+    hideLoadingOverlay(container);
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.id = 'loading-overlay-inline';
+    overlay.innerHTML = `
+        <span class="spinner spinner-lg"></span>
+        <span class="loading-overlay-text">${escapeHtml(message)}</span>
+    `;
+    container.innerHTML = '';
+    container.appendChild(overlay);
+}
+
+/**
+ * 移除容器内的加载覆盖层
+ * @param {HTMLElement} container - 容器元素
+ */
+function hideLoadingOverlay(container) {
+    if (!container) return;
+    const overlay = container.querySelector('#loading-overlay-inline');
+    if (overlay) overlay.remove();
+}

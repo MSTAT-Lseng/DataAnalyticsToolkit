@@ -1175,8 +1175,64 @@ select.text-input {
   animation: spin 0.6s linear infinite;
 }
 
+.spinner-lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.spinner-light {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ---- Button loading state ---- */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.75;
+}
+.btn-loading .spinner {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* ---- Loading overlay (covers a card/container) ---- */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-md);
+  padding: var(--sp-section) var(--sp-xl);
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--r-lg);
+  min-height: 160px;
+}
+
+.loading-overlay-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-steel);
+}
+
+/* ---- Inline loading bar (for preview/table loading) ---- */
+.loading-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-xl);
+  color: var(--color-steel);
+  font-size: 14px;
+}
+
+.loading-bar-row .spinner {
+  flex-shrink: 0;
 }
 
 /* ----------------------------------------------------------
