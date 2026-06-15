@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+{% block title %}维度挖掘 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <span class="eyebrow eyebrow-dark">文本挖掘</span>
+        <h1 class="page-title">维度挖掘</h1>
+        <p class="page-desc">基于关键词匹配与正则表达式，在多维度上对文本数据进行百分制打分，挖掘文本在不同维度上的表现强度。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+
+        <!-- ============================================================
+             Workflow Guide
+             ============================================================ -->
+        <div class="card" style="background: var(--color-surface-feature); border-color: var(--color-brand-green-soft);">
+            <div class="card-body" style="padding-bottom: var(--sp-lg);">
+                <h4 style="font-size:16px; font-weight:600; color: var(--color-brand-green-dark); margin-bottom: var(--sp-sm);">
+                    📋 使用介绍
+                </h4>
+                <ol class="workflow-steps">
+                    <li>上传 Excel/CSV 文件，选择需要分析的文本列</li>
+                    <li>设置维度数量并命名，为每个维度添加匹配关键词及其分数（0–100）</li>
+                    <li>关键词支持普通文本匹配和正则表达式两种模式</li>
+                    <li>每行文本在各维度上独立打分（取匹配关键词的最高分），未匹配则得 0 分</li>
+                    <li>支持导出包含逐行详细结果和维度汇总的 Excel 文件</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Step 1 — File Upload & Preview
+             ============================================================ -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">步骤一：上传文件并选择列</h3>
+            </div>
+            <div class="card-body" style="padding-top:0;">
+                <form id="file-form">
+                    <p class="card-desc tab-desc">
+                        上传表格文件（.xls / .xlsx / .csv），系统将自动解析列结构。
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label">选择表格文件</label>
+                        <input type="file" id="table-file-input" accept=".xls,.xlsx,.csv" class="file-input">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table Preview & Column Selection -->
+        <div id="table-preview-area" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">表格预览</h3>
+                    <span id="table-info" class="text-muted" style="font-size:13px;"></span>
+                </div>
+                <div class="table-wrap preview-scroll">
+                    <table class="data-table clickable" id="preview-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="card-body preview-actions">
+                    <div class="preview-col-info">
+                        <span class="form-label preview-col-label">已选列：</span>
+                        <span id="selected-column-display" class="badge badge-muted preview-col-badge">未选择（点击表头）</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Step 2 — Dimension Configuration
+             ============================================================ -->
+        <div id="dim-config-area" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">步骤二：配置维度与关键词</h3>
+                </div>
+                <div class="card-body" style="padding-top:0;">
+                    <div class="form-group">
+                        <label class="form-label" for="dim-count">维度数量</label>
+                        <div style="display:flex; gap:var(--sp-sm); align-items:center;">
+                            <input type="number" id="dim-count" class="form-input" value="1" min="1" max="10" style="width:100px;">
+                            <button type="button" id="dim-count-apply" class="btn btn-secondary">应用</button>
+                            <span class="text-muted" style="font-size:12px;">范围 1–10</span>
+                        </div>
+                    </div>
+
+                    <div id="dimensions-container" style="margin-top: var(--sp-lg);">
+                        <!-- Dynamically filled -->
+                    </div>
+
+                    <div class="form-actions" style="margin-top: var(--sp-lg); padding-top: var(--sp-md); border-top: 1px solid var(--color-hairline-soft);">
+                        <button type="button" id="analyze-btn" class="btn btn-primary" disabled>开始维度挖掘分析</button>
+                        <span id="config-hint" class="text-muted" style="font-size:12px; margin-left: var(--sp-sm);">请先上传文件、选择列并配置维度</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             Empty State
+             ============================================================ -->
+        <div id="empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <p class="empty-state-text">请上传文件、选择列并配置维度后开始分析，结果将在此处显示</p>
+        </div>
+
+        <!-- ============================================================
+             Results
+             ============================================================ -->
+        <div id="results-container" class="results-area" style="display:none;">
+            <!-- Loading overlay -->
+            <div id="results-loading" class="loading-overlay" style="display:none;">
+                <span class="spinner spinner-lg"></span>
+                <span class="loading-overlay-text" id="results-loading-text">正在维度挖掘分析，请稍候…</span>
+            </div>
+
+            <div id="results-content">
+                <!-- Source info bar -->
+                <div class="stats-bar" id="stats-bar">
+                    <span id="stats-source-col"></span>
+                    <span id="stats-rows"></span>
+                    <span id="stats-dims"></span>
+                </div>
+
+                <!-- Dimension Score Cards -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">维度得分概览</h3>
+                        <div class="card-actions">
+                            <button type="button" id="export-btn" class="btn btn-ghost">导出 Excel</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="dim-scores-chart" style="min-height: 300px;">
+                            <!-- Plotly chart goes here -->
+                        </div>
+                        <div id="dim-scores-table-wrap" style="margin-top: var(--sp-lg);">
+                            <table class="data-table" id="dim-scores-table">
+                                <thead>
+                                    <tr>
+                                        <th>维度</th>
+                                        <th>整体得分</th>
+                                        <th>匹配行数</th>
+                                        <th>匹配率</th>
+                                        <th>关键词命中</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dim-scores-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-Row Detail Table -->
+                <div class="card" id="detail-card">
+                    <div class="card-header">
+                        <h3 class="card-title">逐行分析详情</h3>
+                        <span id="detail-count" class="text-muted" style="font-size:13px;"></span>
+                    </div>
+                    <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table" id="detail-table">
+                            <thead id="detail-table-head"></thead>
+                            <tbody id="detail-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.container -->
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ================================================================
+    // DOM refs
+    // ================================================================
+    const tableFileInput = document.getElementById('table-file-input');
+    const tablePreviewArea = document.getElementById('table-preview-area');
+    const previewTable = document.getElementById('preview-table');
+    const previewTableHead = previewTable.querySelector('thead');
+    const previewTableBody = previewTable.querySelector('tbody');
+    const tableInfo = document.getElementById('table-info');
+    const selectedColumnDisplay = document.getElementById('selected-column-display');
+
+    const dimConfigArea = document.getElementById('dim-config-area');
+    const dimCountInput = document.getElementById('dim-count');
+    const dimCountApply = document.getElementById('dim-count-apply');
+    const dimensionsContainer = document.getElementById('dimensions-container');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const configHint = document.getElementById('config-hint');
+
+    const resultsContainer = document.getElementById('results-container');
+    const emptyState = document.getElementById('empty-state');
+    const resultsLoading = document.getElementById('results-loading');
+    const resultsLoadingText = document.getElementById('results-loading-text');
+    const resultsContent = document.getElementById('results-content');
+    const statsBar = document.getElementById('stats-bar');
+    const statsSourceCol = document.getElementById('stats-source-col');
+    const statsRows = document.getElementById('stats-rows');
+    const statsDims = document.getElementById('stats-dims');
+    const dimScoresChart = document.getElementById('dim-scores-chart');
+    const dimScoresTbody = document.getElementById('dim-scores-tbody');
+    const detailCard = document.getElementById('detail-card');
+    const detailCount = document.getElementById('detail-count');
+    const detailTableHead = document.getElementById('detail-table-head');
+    const detailTableBody = document.getElementById('detail-table-body');
+    const exportBtn = document.getElementById('export-btn');
+
+    // ================================================================
+    // State
+    // ================================================================
+    let currentTableFile = null;
+    let selectedColumnName = null;
+    let selectedColumnIndex = null;
+    let lastAnalysisResult = null;
+    let lastSourceFile = null;
+
+    // ================================================================
+    // Step 1 — File upload → auto-preview
+    // ================================================================
+    tableFileInput.addEventListener('change', async function () {
+        const file = tableFileInput.files[0];
+        currentTableFile = file || null;
+
+        if (!file) {
+            tablePreviewArea.style.display = 'none';
+            dimConfigArea.style.display = 'none';
+            resetColumnSelection();
+            resetAnalyzeButton();
+            return;
+        }
+
+        // Show loading in preview area
+        tablePreviewArea.style.display = 'block';
+        previewTableHead.innerHTML = '';
+        previewTableBody.innerHTML = '';
+        tableInfo.innerHTML = '<span class="spinner"></span> 正在解析表格，请稍候…';
+        tableInfo.style.display = 'flex';
+        tableInfo.style.alignItems = 'center';
+        tableInfo.style.gap = '8px';
+        resetColumnSelection();
+        resetAnalyzeButton();
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const resp = await fetch('/api/dimension-mining/preview', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('预览失败：' + (data.error || '未知错误'));
+                tablePreviewArea.style.display = 'none';
+                return;
+            }
+
+            renderPreviewTable(data);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            tablePreviewArea.style.display = 'none';
+        }
+    });
+
+    function renderPreviewTable(data) {
+        const columns = data.columns;
+        const rows = data.rows;
+
+        previewTableHead.innerHTML = '<tr>' +
+            columns.map((col, idx) =>
+                `<th data-col-index="${idx}" data-col-name="${escapeHtml(col)}">
+                    ${escapeHtml(col)}
+                </th>`
+            ).join('') +
+            '</tr>';
+
+        previewTableBody.innerHTML = rows.map(row =>
+            '<tr>' + row.map((val, idx) =>
+                `<td data-col-index="${idx}">${escapeHtml(val)}</td>`
+            ).join('') + '</tr>'
+        ).join('');
+
+        tableInfo.textContent =
+            `显示前 ${rows.length} 行，共 ${data.total_rows} 行 · ${columns.length} 列`;
+        tableInfo.style.display = '';
+        tableInfo.style.alignItems = '';
+        tableInfo.style.gap = '';
+
+        // Bind header clicks
+        previewTableHead.querySelectorAll('th').forEach(th => {
+            th.addEventListener('click', function () {
+                const colIdx = parseInt(this.dataset.colIndex);
+                const colName = this.dataset.colName;
+                selectColumn(colIdx, colName);
+            });
+        });
+    }
+
+    // ================================================================
+    // Column selection
+    // ================================================================
+    function selectColumn(colIdx, colName) {
+        if (selectedColumnIndex !== null) {
+            previewTableHead.querySelectorAll('th.col-selected').forEach(th => th.classList.remove('col-selected'));
+            previewTableBody.querySelectorAll('td.col-selected').forEach(td => td.classList.remove('col-selected'));
+        }
+
+        selectedColumnIndex = colIdx;
+        selectedColumnName = colName;
+
+        const th = previewTableHead.querySelector(`th[data-col-index="${colIdx}"]`);
+        if (th) th.classList.add('col-selected');
+
+        previewTableBody.querySelectorAll(`td[data-col-index="${colIdx}"]`).forEach(td => {
+            td.classList.add('col-selected');
+        });
+
+        selectedColumnDisplay.textContent = colName;
+        selectedColumnDisplay.className = 'badge badge-green';
+
+        // Show dimension config area
+        dimConfigArea.style.display = '';
+        dimConfigArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Initialize dimensions
+        buildDimensionForms();
+        updateAnalyzeButton();
+    }
+
+    function resetColumnSelection() {
+        selectedColumnName = null;
+        selectedColumnIndex = null;
+        selectedColumnDisplay.textContent = '未选择（点击表头）';
+        selectedColumnDisplay.className = 'badge badge-muted';
+    }
+
+    // ================================================================
+    // Step 2 — Dimension configuration
+    // ================================================================
+
+    dimCountApply.addEventListener('click', function () {
+        buildDimensionForms();
+        updateAnalyzeButton();
+    });
+
+    dimCountInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buildDimensionForms();
+            updateAnalyzeButton();
+        }
+    });
+
+    dimCountInput.addEventListener('change', function () {
+        // Clamp value
+        let v = parseInt(dimCountInput.value) || 1;
+        if (v < 1) v = 1;
+        if (v > 10) v = 10;
+        dimCountInput.value = v;
+    });
+
+    function buildDimensionForms() {
+        let count = parseInt(dimCountInput.value) || 1;
+        if (count < 1) count = 1;
+        if (count > 10) count = 10;
+        dimCountInput.value = count;
+
+        // Preserve existing data
+        const existingData = collectExistingDimensionData();
+
+        dimensionsContainer.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+            const saved = existingData[i] || { name: '', keywords: [{ pattern: '', score: 50, is_regex: false }] };
+
+            const dimCard = document.createElement('div');
+            dimCard.className = 'dimension-card';
+            dimCard.style.cssText = 'border: 1px solid var(--color-hairline-soft); border-radius: var(--r-md); padding: var(--sp-md); margin-bottom: var(--sp-md); background: var(--color-surface);';
+
+            dimCard.innerHTML = `
+                <div style="display:flex; align-items:center; gap:var(--sp-sm); margin-bottom: var(--sp-md);">
+                    <span style="font-weight:600; color: var(--color-brand-green-dark); white-space:nowrap;">维度 ${i + 1}</span>
+                    <input type="text" class="form-input dim-name-input" value="${escapeHtml(saved.name)}"
+                        placeholder="输入维度名称（如：服务质量）"
+                        style="flex:1; font-weight:500;">
+                    <button type="button" class="btn btn-ghost btn-sm dim-remove-btn"
+                        title="删除此维度" style="color:var(--color-accent-orange); flex-shrink:0; ${count <= 1 ? 'display:none;' : ''}">
+                        ✕
+                    </button>
+                </div>
+                <div class="dim-keywords-container" data-dim-index="${i}">
+                    <!-- Keywords will be filled here -->
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm add-kw-btn" style="margin-top: var(--sp-sm); color: var(--color-brand-green-mid);">
+                    + 添加关键词
+                </button>
+            `;
+
+            dimensionsContainer.appendChild(dimCard);
+
+            // Build keywords for this dimension
+            const kwContainer = dimCard.querySelector('.dim-keywords-container');
+            const savedKws = saved.keywords && saved.keywords.length > 0
+                ? saved.keywords
+                : [{ pattern: '', score: 50, is_regex: false }];
+
+            savedKws.forEach(kw => {
+                addKeywordRow(kwContainer, kw);
+            });
+
+            // Bind add keyword button
+            dimCard.querySelector('.add-kw-btn').addEventListener('click', function () {
+                addKeywordRow(kwContainer, { pattern: '', score: 50, is_regex: false });
+                updateAnalyzeButton();
+            });
+
+            // Bind remove dimension button
+            const removeBtn = dimCard.querySelector('.dim-remove-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function () {
+                    const currentCount = dimensionsContainer.querySelectorAll('.dimension-card').length;
+                    if (currentCount <= 1) return;
+                    dimCard.remove();
+                    // Renumber
+                    renumberDimensions();
+                    dimCountInput.value = currentCount - 1;
+                    updateAnalyzeButton();
+                });
+            }
+        }
+
+        // Bind input change events
+        dimensionsContainer.querySelectorAll('.dim-name-input, .kw-pattern, .kw-score, .kw-regex-toggle').forEach(el => {
+            el.addEventListener('input', updateAnalyzeButton);
+            el.addEventListener('change', updateAnalyzeButton);
+        });
+
+        // Bind remove keyword buttons
+        dimensionsContainer.querySelectorAll('.kw-remove-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const row = btn.closest('.kw-row');
+                const container = row.closest('.dim-keywords-container');
+                const rows = container.querySelectorAll('.kw-row');
+                if (rows.length <= 1) {
+                    // Clear instead of remove
+                    row.querySelector('.kw-pattern').value = '';
+                    row.querySelector('.kw-score').value = '50';
+                } else {
+                    row.remove();
+                }
+                updateAnalyzeButton();
+            });
+        });
+    }
+
+    function addKeywordRow(container, kwData) {
+        const row = document.createElement('div');
+        row.className = 'kw-row';
+        row.style.cssText = 'display:flex; gap:var(--sp-xs); align-items:center; margin-bottom: var(--sp-xs); flex-wrap:wrap;';
+
+        const isRegex = kwData.is_regex || false;
+        const score = kwData.score !== undefined ? kwData.score : 50;
+        const pattern = kwData.pattern || '';
+
+        row.innerHTML = `
+            <input type="text" class="form-input kw-pattern" value="${escapeHtml(pattern)}"
+                placeholder="${isRegex ? '正则表达式，如 \\\\d+折' : '关键词，如 满意'}"
+                style="flex:2; min-width:180px;">
+            <span style="font-size:12px; color:var(--color-steel); white-space:nowrap;">分数</span>
+            <input type="number" class="form-input kw-score" value="${score}"
+                min="0" max="100" style="width:70px; flex-shrink:0;">
+            <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                <input type="checkbox" class="kw-regex-toggle" ${isRegex ? 'checked' : ''}>
+                正则
+            </label>
+            <button type="button" class="btn btn-ghost btn-sm kw-remove-btn"
+                title="删除此关键词" style="color:var(--color-accent-orange); flex-shrink:0; padding:2px 6px;">✕</button>
+        `;
+
+        container.appendChild(row);
+
+        // Toggle placeholder on regex change
+        const patternInput = row.querySelector('.kw-pattern');
+        const regexToggle = row.querySelector('.kw-regex-toggle');
+        const scoreInput = row.querySelector('.kw-score');
+
+        regexToggle.addEventListener('change', function () {
+            if (this.checked) {
+                patternInput.placeholder = '正则表达式，如 \\d+折';
+            } else {
+                patternInput.placeholder = '关键词，如 满意';
+            }
+            updateAnalyzeButton();
+        });
+
+        patternInput.addEventListener('input', updateAnalyzeButton);
+        scoreInput.addEventListener('input', updateAnalyzeButton);
+
+        row.querySelector('.kw-remove-btn').addEventListener('click', function () {
+            const rows = container.querySelectorAll('.kw-row');
+            if (rows.length <= 1) {
+                patternInput.value = '';
+                scoreInput.value = '50';
+                regexToggle.checked = false;
+            } else {
+                row.remove();
+            }
+            updateAnalyzeButton();
+        });
+    }
+
+    function collectExistingDimensionData() {
+        const data = [];
+        const cards = dimensionsContainer.querySelectorAll('.dimension-card');
+        cards.forEach(card => {
+            const nameInput = card.querySelector('.dim-name-input');
+            const name = nameInput ? nameInput.value.trim() : '';
+            const keywords = [];
+            const kwRows = card.querySelectorAll('.kw-row');
+            kwRows.forEach(row => {
+                const pattern = row.querySelector('.kw-pattern');
+                const score = row.querySelector('.kw-score');
+                const regex = row.querySelector('.kw-regex-toggle');
+                keywords.push({
+                    pattern: pattern ? pattern.value.trim() : '',
+                    score: score ? parseInt(score.value) || 0 : 50,
+                    is_regex: regex ? regex.checked : false,
+                });
+            });
+            data.push({ name, keywords });
+        });
+        return data;
+    }
+
+    function renumberDimensions() {
+        const cards = dimensionsContainer.querySelectorAll('.dimension-card');
+        cards.forEach((card, i) => {
+            const span = card.querySelector('span[style]');
+            // Find the dimension number span
+            const spans = card.querySelectorAll('div > span');
+            for (const s of spans) {
+                if (s.textContent.startsWith('维度 ')) {
+                    s.textContent = `维度 ${i + 1}`;
+                    break;
+                }
+            }
+        });
+    }
+
+    function getDimensionsConfig() {
+        const dims = [];
+        const cards = dimensionsContainer.querySelectorAll('.dimension-card');
+        cards.forEach(card => {
+            const nameInput = card.querySelector('.dim-name-input');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) return;
+
+            const keywords = [];
+            const kwRows = card.querySelectorAll('.kw-row');
+            kwRows.forEach(row => {
+                const pattern = row.querySelector('.kw-pattern');
+                const score = row.querySelector('.kw-score');
+                const regex = row.querySelector('.kw-regex-toggle');
+                const p = pattern ? pattern.value.trim() : '';
+                if (!p) return;
+                keywords.push({
+                    pattern: p,
+                    score: parseInt(score.value) || 0,
+                    is_regex: regex ? regex.checked : false,
+                });
+            });
+
+            if (keywords.length > 0) {
+                dims.push({ name, keywords });
+            }
+        });
+        return dims;
+    }
+
+    function updateAnalyzeButton() {
+        const dims = getDimensionsConfig();
+        const canAnalyze = selectedColumnName && currentTableFile && dims.length > 0;
+        analyzeBtn.disabled = !canAnalyze;
+        if (canAnalyze) {
+            configHint.textContent = `已配置 ${dims.length} 个维度，可开始分析`;
+            configHint.style.color = 'var(--color-brand-green-mid)';
+        } else {
+            if (!selectedColumnName || !currentTableFile) {
+                configHint.textContent = '请先上传文件并选择列';
+            } else if (dims.length === 0) {
+                configHint.textContent = '请至少配置一个维度及其关键词';
+            }
+            configHint.style.color = '';
+        }
+    }
+
+    function resetAnalyzeButton() {
+        analyzeBtn.disabled = true;
+        configHint.textContent = '请先上传文件、选择列并配置维度';
+        configHint.style.color = '';
+    }
+
+    // ================================================================
+    // Analyze
+    // ================================================================
+    analyzeBtn.addEventListener('click', async function () {
+        const dims = getDimensionsConfig();
+        if (!selectedColumnName || !currentTableFile || dims.length === 0) {
+            alert('请先完成文件上传、列选择和维度配置');
+            return;
+        }
+
+        // Validate
+        for (const dim of dims) {
+            for (const kw of dim.keywords) {
+                if (kw.is_regex) {
+                    try {
+                        new RegExp(kw.pattern);
+                    } catch (e) {
+                        alert(`维度「${dim.name}」的正则表达式「${kw.pattern}」语法错误：${e.message}`);
+                        return;
+                    }
+                }
+                if (kw.score < 0 || kw.score > 100) {
+                    alert(`维度「${dim.name}」的关键词「${kw.pattern}」分数必须在 0–100 之间`);
+                    return;
+                }
+            }
+        }
+
+        // Show loading
+        resultsContainer.style.display = 'block';
+        emptyState.style.display = 'none';
+        resultsContent.style.display = 'none';
+        resultsLoading.style.display = '';
+        resultsLoadingText.textContent = `正在对「${selectedColumnName}」列进行维度挖掘分析，请稍候…`;
+        setButtonLoading(analyzeBtn, '分析中…');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentTableFile);
+            formData.append('column', selectedColumnName);
+            formData.append('dimensions', JSON.stringify(dims));
+
+            const resp = await fetch('/api/dimension-mining/analyze', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                alert('分析失败：' + (data.error || '未知错误'));
+                resultsContainer.style.display = 'none';
+                emptyState.style.display = '';
+                return;
+            }
+
+            lastAnalysisResult = data.result;
+            lastSourceFile = data.source_file || '';
+            renderResults(data.result, data.source_column);
+        } catch (err) {
+            alert('请求失败：' + err.message);
+            resultsContainer.style.display = 'none';
+            emptyState.style.display = '';
+        } finally {
+            resetButton(analyzeBtn, '开始维度挖掘分析');
+        }
+    });
+
+    // ================================================================
+    // Render results
+    // ================================================================
+    function renderResults(result, sourceColumn) {
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+
+        const dims = result.dimensions || [];
+        const rows = result.row_results || [];
+
+        // Stats bar
+        statsBar.style.display = 'flex';
+        statsSourceCol.textContent = `来源列：${escapeHtml(sourceColumn)}`;
+        statsRows.textContent = `数据行数：${result.total_rows}`;
+        statsDims.textContent = `维度数：${result.dimension_count}`;
+
+        // ---- Dimension scores table ----
+        dimScoresTbody.innerHTML = dims.map(d => {
+            const kwBadges = Object.entries(d.keywords_matched || {}).map(([kw, cnt]) =>
+                `<span class="badge badge-purple" style="font-size:11px;margin:1px;">${escapeHtml(kw)}: ${cnt}</span>`
+            ).join(' ') || '<span class="text-muted" style="font-size:12px;">无匹配</span>';
+
+            const scoreClass = d.overall_score >= 70 ? 'badge-green' :
+                               d.overall_score >= 40 ? 'badge-muted' : 'badge-orange';
+
+            return `<tr>
+                <td><strong>${escapeHtml(d.name)}</strong></td>
+                <td><span class="badge ${scoreClass}" style="font-size:14px;font-weight:600;">${d.overall_score.toFixed(1)}</span></td>
+                <td>${d.match_count}</td>
+                <td>${(d.match_rate * 100).toFixed(1)}%</td>
+                <td>${kwBadges}</td>
+            </tr>`;
+        }).join('');
+
+        // ---- Bar chart via Plotly ----
+        const chartData = [{
+            type: 'bar',
+            x: dims.map(d => d.overall_score),
+            y: dims.map(d => d.name),
+            orientation: 'h',
+            marker: {
+                color: dims.map(d =>
+                    d.overall_score >= 70 ? '#00a35c' :
+                    d.overall_score >= 40 ? '#5c6c7a' : '#fa6e39'
+                ),
+            },
+            text: dims.map(d => d.overall_score.toFixed(1)),
+            textposition: 'outside',
+            textfont: { size: 13, color: '#001e2b' },
+            hovertemplate: '%{y}: %{x:.1f} 分<br>匹配率: %{customdata:.1f}%<extra></extra>',
+            customdata: dims.map(d => d.match_rate * 100),
+        }];
+
+        const layout = {
+            xaxis: {
+                title: '整体得分（百分制）',
+                range: [0, 105],
+                gridcolor: '#eceff1',
+                titlefont: { size: 12, color: '#5c6c7a' },
+            },
+            yaxis: {
+                automargin: true,
+                titlefont: { size: 12 },
+            },
+            margin: { l: 120, r: 50, t: 20, b: 40 },
+            height: Math.max(200, dims.length * 50 + 80),
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            font: { family: 'Lexend, sans-serif', size: 13, color: '#1c2d38' },
+        };
+
+        Plotly.newPlot(dimScoresChart, chartData, layout, {
+            displayModeBar: false,
+            responsive: true,
+        });
+
+        // ---- Detail table ----
+        const dimNames = dims.map(d => d.name);
+        detailTableHead.innerHTML = '<tr>' +
+            '<th>#</th>' +
+            '<th>文本内容</th>' +
+            dimNames.map(n => `<th>${escapeHtml(n)}<br><span style="font-weight:400;font-size:11px;">得分</span></th>`).join('') +
+            dimNames.map(n => `<th>${escapeHtml(n)}<br><span style="font-weight:400;font-size:11px;">匹配词</span></th>`).join('') +
+            '</tr>';
+
+        // Show first 100 rows in detail, more would be too heavy
+        const displayRows = rows.slice(0, 100);
+        detailTableBody.innerHTML = displayRows.map(row => {
+            const scores = row.scores || {};
+            const matches = row.matches || {};
+            let html = `<tr>
+                <td>${row.index + 1}</td>
+                <td class="sentence-text" title="${escapeHtml(row.text)}">${truncateText(row.text, 50)}</td>`;
+            dimNames.forEach(name => {
+                const s = scores[name] !== undefined ? scores[name] : 0;
+                const cls = s >= 70 ? 'badge-green' : s >= 40 ? 'badge-muted' : s > 0 ? 'badge-orange' : '';
+                html += `<td>${cls ? `<span class="badge ${cls}" style="font-size:12px;">${s}</span>` : `<span class="text-muted" style="font-size:12px;">${s}</span>`}</td>`;
+            });
+            dimNames.forEach(name => {
+                const m = matches[name] || [];
+                html += `<td style="font-size:12px;">${m.length > 0 ? m.map(w => `<span class="badge badge-purple" style="font-size:11px;margin:1px;">${escapeHtml(w)}</span>`).join('') : '<span class="text-muted">—</span>'}</td>`;
+            });
+            html += '</tr>';
+            return html;
+        }).join('');
+
+        if (rows.length > 100) {
+            detailTableBody.innerHTML += `<tr><td colspan="${2 + dimNames.length * 2}" style="text-align:center;color:var(--color-steel);padding:var(--sp-md);">
+                … 仅显示前 100 行，完整数据请导出 Excel 查看 …
+            </td></tr>`;
+        }
+
+        detailCount.textContent = `共 ${rows.length} 行`;
+        detailCard.style.display = '';
+
+        // Show export
+        exportBtn.style.display = 'inline-flex';
+
+        // Scroll to results
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ================================================================
+    // Export
+    // ================================================================
+    exportBtn.addEventListener('click', async function () {
+        if (!lastAnalysisResult) return;
+
+        setButtonLoading(exportBtn, '导出中…');
+
+        try {
+            const resp = await fetch('/api/dimension-mining/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    result: lastAnalysisResult,
+                    source_info: selectedColumnName
+                        ? `文件: ${lastSourceFile || ''}, 列: ${selectedColumnName}`
+                        : '',
+                }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                alert('导出失败：' + (err.error || '服务器错误'));
+                return;
+            }
+
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `维度挖掘结果_${selectedColumnName || '分析'}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('导出失败：' + err.message);
+        } finally {
+            resetButton(exportBtn, '导出 Excel');
+        }
+    });
+
+    // ================================================================
+    // Init — set default dimension
+    // ================================================================
+    // Don't build on page load — wait for file upload + column selection
+
+})();
+</script>
+{% endblock %}

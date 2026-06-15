@@ -7,7 +7,7 @@
     <div class="hero-container">
         <h1 class="hero-title">数据分析工具箱</h1>
         <p class="hero-subtitle">
-            集成分词统计、词云制作、情感分析与回归分析等功能，<br>
+            集成分词统计、词云制作、情感分析、回归分析与维度挖掘等功能，<br>
             一站式中文文本数据处理。
         </p>
         <div class="hero-actions">
@@ -22,7 +22,7 @@
     <div class="container">
         <div class="section-header">
             <span class="eyebrow eyebrow-dark">核心功能</span>
-            <h2 class="section-title">四大分析模块</h2>
+            <h2 class="section-title">六大分析模块</h2>
             <p class="section-desc">覆盖从文本预处理到统计建模的完整分析流程</p>
         </div>
 
@@ -90,6 +90,23 @@
                 </div>
                 <h3 class="feature-title">回归分析</h3>
                 <p class="feature-desc">上传 CSV 或手动输入数据，自动建立线性回归模型，绘制交互散点图与回归线。</p>
+                <span class="feature-link">立即使用 →</span>
+            </a>
+
+            <!-- 维度挖掘 -->
+            <a href="{{ url_for('dimension_mining') }}" class="feature-card">
+                <div class="feature-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        <circle cx="6.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="6.5" r="1.5"/>
+                        <circle cx="6.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">维度挖掘</h3>
+                <p class="feature-desc">基于关键词/正则匹配，在多维度上对文本数据进行百分制打分，量化文本在不同方向上的表现。</p>
                 <span class="feature-link">立即使用 →</span>
             </a>
         </div>
