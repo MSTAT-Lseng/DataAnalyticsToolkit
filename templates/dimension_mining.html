@@ -84,20 +84,20 @@
                 <div class="card-body" style="padding-top:0;">
                     <div class="form-group">
                         <label class="form-label" for="dim-count">维度数量</label>
-                        <div style="display:flex; gap:var(--sp-sm); align-items:center;">
-                            <input type="number" id="dim-count" class="form-input" value="1" min="1" max="10" style="width:100px;">
+                        <div class="dim-count-row">
+                            <input type="number" id="dim-count" class="form-input dim-count-input" value="1" min="1" max="10">
                             <button type="button" id="dim-count-apply" class="btn btn-secondary">应用</button>
-                            <span class="text-muted" style="font-size:12px;">范围 1–10</span>
+                            <span class="form-hint">范围 1–10</span>
                         </div>
                     </div>
 
-                    <div id="dimensions-container" style="margin-top: var(--sp-lg);">
+                    <div id="dimensions-container" class="dimensions-container">
                         <!-- Dynamically filled -->
                     </div>
 
-                    <div class="form-actions" style="margin-top: var(--sp-lg); padding-top: var(--sp-md); border-top: 1px solid var(--color-hairline-soft);">
+                    <div class="form-actions form-actions-divider">
                         <button type="button" id="analyze-btn" class="btn btn-primary" disabled>开始维度挖掘分析</button>
-                        <span id="config-hint" class="text-muted" style="font-size:12px; margin-left: var(--sp-sm);">请先上传文件、选择列并配置维度</span>
+                        <span id="config-hint" class="form-hint">请先上传文件、选择列并配置维度</span>
                     </div>
                 </div>
             </div>
@@ -395,23 +395,21 @@
 
             const dimCard = document.createElement('div');
             dimCard.className = 'dimension-card';
-            dimCard.style.cssText = 'border: 1px solid var(--color-hairline-soft); border-radius: var(--r-md); padding: var(--sp-md); margin-bottom: var(--sp-md); background: var(--color-surface);';
 
             dimCard.innerHTML = `
-                <div style="display:flex; align-items:center; gap:var(--sp-sm); margin-bottom: var(--sp-md);">
-                    <span style="font-weight:600; color: var(--color-brand-green-dark); white-space:nowrap;">维度 ${i + 1}</span>
+                <div class="dim-header">
+                    <span class="dim-header-label">维度 ${i + 1}</span>
                     <input type="text" class="form-input dim-name-input" value="${escapeHtml(saved.name)}"
-                        placeholder="输入维度名称（如：服务质量）"
-                        style="flex:1; font-weight:500;">
+                        placeholder="输入维度名称（如：服务质量）">
                     <button type="button" class="btn btn-ghost btn-sm dim-remove-btn"
-                        title="删除此维度" style="color:var(--color-accent-orange); flex-shrink:0; ${count <= 1 ? 'display:none;' : ''}">
+                        title="删除此维度" ${count <= 1 ? 'style="display:none;"' : ''}>
                         ✕
                     </button>
                 </div>
                 <div class="dim-keywords-container" data-dim-index="${i}">
                     <!-- Keywords will be filled here -->
                 </div>
-                <button type="button" class="btn btn-ghost btn-sm add-kw-btn" style="margin-top: var(--sp-sm); color: var(--color-brand-green-mid);">
+                <button type="button" class="btn btn-ghost btn-sm add-kw-btn">
                     + 添加关键词
                 </button>
             `;
@@ -476,7 +474,6 @@
     function addKeywordRow(container, kwData) {
         const row = document.createElement('div');
         row.className = 'kw-row';
-        row.style.cssText = 'display:flex; gap:var(--sp-xs); align-items:center; margin-bottom: var(--sp-xs); flex-wrap:wrap;';
 
         const isRegex = kwData.is_regex || false;
         const score = kwData.score !== undefined ? kwData.score : 50;
@@ -484,17 +481,16 @@
 
         row.innerHTML = `
             <input type="text" class="form-input kw-pattern" value="${escapeHtml(pattern)}"
-                placeholder="${isRegex ? '正则表达式，如 \\\\d+折' : '关键词，如 满意'}"
-                style="flex:2; min-width:180px;">
-            <span style="font-size:12px; color:var(--color-steel); white-space:nowrap;">分数</span>
+                placeholder="${isRegex ? '正则表达式，如 \\\\d+折' : '关键词，如 满意'}">
+            <span class="kw-score-label">分数</span>
             <input type="number" class="form-input kw-score" value="${score}"
-                min="0" max="100" style="width:70px; flex-shrink:0;">
-            <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                min="0" max="100">
+            <label class="kw-regex-label">
                 <input type="checkbox" class="kw-regex-toggle" ${isRegex ? 'checked' : ''}>
                 正则
             </label>
-            <button type="button" class="btn btn-ghost btn-sm kw-remove-btn"
-                title="删除此关键词" style="color:var(--color-accent-orange); flex-shrink:0; padding:2px 6px;">✕</button>
+            <button type="button" class="btn btn-ghost btn-sm dim-remove-btn kw-remove-btn"
+                title="删除此关键词">✕</button>
         `;
 
         container.appendChild(row);

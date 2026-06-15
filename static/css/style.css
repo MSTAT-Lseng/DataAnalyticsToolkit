@@ -742,14 +742,194 @@ select.text-input {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.checkbox-label {
+/* ---- Generic form input (matches .text-input, usable on <input>) ---- */
+.form-input {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  padding: var(--sp-xs) var(--sp-sm);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--r-md);
+  height: 38px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-input:focus {
+  border-color: var(--color-brand-green-dark);
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+
+/* Number input — compact variant */
+input[type="number"].form-input {
+  -moz-appearance: textfield;
+}
+input[type="number"].form-input::-webkit-inner-spin-button,
+input[type="number"].form-input::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 28px;
+}
+
+/* ---- Dimension Config (维度挖掘) ---- */
+.dim-count-row {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+}
+.dim-count-input {
+  width: 96px;
+}
+
+.dimensions-container {
+  margin-top: var(--sp-lg);
+}
+
+.form-actions-divider {
+  margin-top: var(--sp-lg);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+/* ---- Dimension Card (维度挖掘) ---- */
+.dimension-card {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--r-lg);
+  padding: var(--sp-lg);
+  margin-bottom: var(--sp-md);
+  background: var(--color-canvas);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.dimension-card:hover {
+  border-color: var(--color-brand-green-soft);
+  box-shadow: var(--shadow-subtle);
+}
+
+/* Dimension header bar */
+.dim-header {
   display: flex;
   align-items: center;
-  gap: var(--sp-xs);
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+}
+.dim-header-label {
+  font-weight: 600;
   font-size: 14px;
+  color: var(--color-brand-green-dark);
+  white-space: nowrap;
+  min-width: 56px;
+}
+.dim-name-input {
+  flex: 1;
+}
+
+/* ---- Keyword Row ---- */
+.kw-row {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+  margin-bottom: var(--sp-sm);
+  flex-wrap: wrap;
+  padding: var(--sp-xs) 0;
+}
+.kw-row:last-child {
+  margin-bottom: 0;
+}
+
+.kw-pattern {
+  flex: 2;
+  min-width: 160px;
+}
+
+.kw-score {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.kw-score-label {
+  font-size: 12px;
+  color: var(--color-steel);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Regex toggle — reuses .checkbox-label pattern, compact size */
+.kw-regex-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-slate);
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: var(--r-md);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.kw-regex-label:hover {
+  background: var(--color-surface-soft);
+}
+.kw-regex-label:has(input:checked) {
+  color: var(--color-brand-green-dark);
+  background: var(--color-surface-feature);
+}
+
+.kw-regex-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-hairline-strong);
+  border-radius: var(--r-xs);
+  background: var(--color-canvas);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.kw-regex-label input[type="checkbox"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  transform: scale(0);
+  transition: transform 0.12s ease;
+  background: var(--color-canvas);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.kw-regex-label input[type="checkbox"]:checked {
+  background: var(--color-brand-green);
+  border-color: var(--color-brand-green);
+}
+.kw-regex-label input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+/* Add-keyword & remove-dimension compact buttons */
+.btn-sm {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+.add-kw-btn {
+  margin-top: var(--sp-xs);
+  color: var(--color-brand-green-mid);
+  font-weight: 500;
+}
+.add-kw-btn:hover {
+  color: var(--color-brand-green-dark);
+  background: var(--color-surface-feature);
+  border-color: var(--color-brand-green-soft);
+}
+
+.dim-remove-btn {
+  color: var(--color-accent-orange);
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-weight: 600;
 }
 
 /* ----------------------------------------------------------
