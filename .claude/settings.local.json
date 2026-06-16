@@ -15,7 +15,13 @@
       "Bash(curl -s -X POST http://127.0.0.1:5000/api/segmentation/preview -F file=@/tmp/test_segmentation.xlsx)",
       "Bash(curl -s -X POST http://127.0.0.1:5000/api/segmentation/file -F file=@/tmp/test_segmentation.xlsx -F column=描述 -F top_n=10)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" http://127.0.0.1:5000/segmentation)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(sed -i \"s/url_for\\('index'\\)/url_for\\('pages.index'\\)/g\" base.html)",
+      "Bash(sed -i \"s/url_for\\('segmentation'\\)/url_for\\('pages.segmentation'\\)/g\" base.html index.html wordcloud.html)",
+      "Bash(sed -i \"s/url_for\\('wordcloud'\\)/url_for\\('pages.wordcloud'\\)/g\" base.html index.html)",
+      "Bash(sed -i \"s/url_for\\('sentiment'\\)/url_for\\('pages.sentiment'\\)/g\" base.html index.html)",
+      "Bash(sed -i \"s/url_for\\('regression'\\)/url_for\\('pages.regression'\\)/g\" base.html index.html)",
+      "Bash(timeout 30 venv/bin/python -c ' *)"
     ]
   }
 }

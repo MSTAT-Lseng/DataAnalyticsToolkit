@@ -21,7 +21,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{{ url_for('index') }}" class="nav-logo">
+            <a href="{{ url_for('pages.index') }}" class="nav-logo">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <rect x="2" y="2" width="8" height="8" rx="2" fill="#00ed64"/>
                     <rect x="14" y="2" width="8" height="8" rx="2" fill="#00ed64" opacity="0.7"/>
@@ -31,12 +31,12 @@
                 <span class="nav-logo-text">DataAnalytics</span>
             </a>
             <ul class="nav-links">
-                <li><a href="{{ url_for('segmentation') }}" class="nav-link">分词统计</a></li>
-                <li><a href="{{ url_for('wordcloud') }}" class="nav-link">词云制作</a></li>
-                <li><a href="{{ url_for('cleaning') }}" class="nav-link">数据清洗</a></li>
-                <li><a href="{{ url_for('sentiment') }}" class="nav-link">情感分析</a></li>
-                <li><a href="{{ url_for('regression') }}" class="nav-link">回归分析</a></li>
-                <li><a href="{{ url_for('dimension_mining') }}" class="nav-link">维度挖掘</a></li>
+                <li><a href="{{ url_for('pages.segmentation') }}" class="nav-link">分词统计</a></li>
+                <li><a href="{{ url_for('pages.wordcloud') }}" class="nav-link">词云制作</a></li>
+                <li><a href="{{ url_for('pages.cleaning') }}" class="nav-link">数据清洗</a></li>
+                <li><a href="{{ url_for('pages.sentiment') }}" class="nav-link">情感分析</a></li>
+                <li><a href="{{ url_for('pages.regression') }}" class="nav-link">回归分析</a></li>
+                <li><a href="{{ url_for('pages.dimension_mining') }}" class="nav-link">维度挖掘</a></li>
             </ul>
         </div>
     </nav>
@@ -52,15 +52,15 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <h4 class="footer-heading">工具</h4>
-                    <a href="{{ url_for('cleaning') }}" class="footer-link">数据清洗</a>
-                    <a href="{{ url_for('segmentation') }}" class="footer-link">分词统计</a>
-                    <a href="{{ url_for('wordcloud') }}" class="footer-link">词云制作</a>
+                    <a href="{{ url_for('pages.cleaning') }}" class="footer-link">数据清洗</a>
+                    <a href="{{ url_for('pages.segmentation') }}" class="footer-link">分词统计</a>
+                    <a href="{{ url_for('pages.wordcloud') }}" class="footer-link">词云制作</a>
                 </div>
                 <div class="footer-col">
                     <h4 class="footer-heading">分析</h4>
-                    <a href="{{ url_for('sentiment') }}" class="footer-link">情感分析</a>
-                    <a href="{{ url_for('regression') }}" class="footer-link">回归分析</a>
-                    <a href="{{ url_for('dimension_mining') }}" class="footer-link">维度挖掘</a>
+                    <a href="{{ url_for('pages.sentiment') }}" class="footer-link">情感分析</a>
+                    <a href="{{ url_for('pages.regression') }}" class="footer-link">回归分析</a>
+                    <a href="{{ url_for('pages.dimension_mining') }}" class="footer-link">维度挖掘</a>
                 </div>
                 <div class="footer-col">
                     <h4 class="footer-heading">关于</h4>

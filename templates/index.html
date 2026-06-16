@@ -11,7 +11,7 @@
             一站式中文文本数据处理。
         </p>
         <div class="hero-actions">
-            <a href="{{ url_for('segmentation') }}" class="btn btn-primary">开始使用</a>
+            <a href="{{ url_for('pages.segmentation') }}" class="btn btn-primary">开始使用</a>
             <a href="#features" class="btn btn-secondary-on-dark">了解更多</a>
         </div>
     </div>
@@ -28,7 +28,7 @@
 
         <div class="features-grid">
             <!-- 数据清洗 -->
-            <a href="{{ url_for('cleaning') }}" class="feature-card">
+            <a href="{{ url_for('pages.cleaning') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 6h18"/><path d="M7 12h10"/><path d="M11 18h2"/>
@@ -42,7 +42,7 @@
             </a>
 
             <!-- 分词统计 -->
-            <a href="{{ url_for('segmentation') }}" class="feature-card">
+            <a href="{{ url_for('pages.segmentation') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/>
@@ -56,7 +56,7 @@
             </a>
 
             <!-- 词云制作 -->
-            <a href="{{ url_for('wordcloud') }}" class="feature-card">
+            <a href="{{ url_for('pages.wordcloud') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10"/>
@@ -69,7 +69,7 @@
             </a>
 
             <!-- 情感分析 -->
-            <a href="{{ url_for('sentiment') }}" class="feature-card">
+            <a href="{{ url_for('pages.sentiment') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/>
@@ -82,7 +82,7 @@
             </a>
 
             <!-- 回归分析 -->
-            <a href="{{ url_for('regression') }}" class="feature-card">
+            <a href="{{ url_for('pages.regression') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="2" y1="20" x2="22" y2="20"/><polyline points="4 18 8 8 13 12 17 4 20 8"/>
@@ -94,7 +94,7 @@
             </a>
 
             <!-- 维度挖掘 -->
-            <a href="{{ url_for('dimension_mining') }}" class="feature-card">
+            <a href="{{ url_for('pages.dimension_mining') }}" class="feature-card">
                 <div class="feature-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -118,7 +118,7 @@
     <div class="container">
         <h2 class="cta-title">准备好分析你的数据了吗？</h2>
         <p class="cta-desc">选择一个工具，粘贴或上传数据，即刻获得分析结果。</p>
-        <a href="{{ url_for('segmentation') }}" class="btn btn-primary">免费开始</a>
+        <a href="{{ url_for('pages.segmentation') }}" class="btn btn-primary">免费开始</a>
     </div>
 </section>
 {% endblock %}
