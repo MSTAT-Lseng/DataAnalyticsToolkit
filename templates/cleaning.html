@@ -49,7 +49,7 @@
         </div>
 
         <!-- ============================================================
-             Table Preview & Column Selection
+             Table Preview & Header Strategy Entry
              ============================================================ -->
         <div id="preview-area" class="results-area" style="display:none;">
             <div class="card">
@@ -58,10 +58,17 @@
                     <span id="table-info" class="text-muted" style="font-size:13px;"></span>
                 </div>
                 <div class="table-wrap preview-scroll">
-                    <table class="data-table" id="preview-table">
+                    <table class="data-table clickable" id="preview-table">
                         <thead id="preview-head"></thead>
                         <tbody id="preview-body"></tbody>
                     </table>
+                </div>
+                <div class="card-body preview-actions">
+                    <div class="preview-col-info">
+                        <span class="form-label preview-col-label">当前配置列：</span>
+                        <span id="selected-column-display" class="badge badge-muted preview-col-badge">未选择（点击表头）</span>
+                    </div>
+                    <span class="form-hint">点击任意表头，为该列设置清洗策略</span>
                 </div>
             </div>
         </div>
@@ -73,14 +80,49 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">清洗策略配置</h3>
-                    <span class="text-muted" style="font-size:13px;">勾选列名左侧复选框，为每列配置清洗规则</span>
+                    <span id="strategy-panel-desc" class="text-muted" style="font-size:13px;">点击上方表格表头后，在这里配置该列规则</span>
                 </div>
-                <div class="card-body" id="strategy-list">
-                    <!-- Dynamic: one .strategy-item per column -->
+                <div class="card-body" id="strategy-editor">
+                    <div class="strategy-editor-empty" id="strategy-empty">
+                        点击预览表中的列名开始配置。
+                    </div>
+                    <div id="strategy-form" style="display:none;">
+                        <div class="strategy-editor-title">
+                            <span class="form-label preview-col-label">正在配置：</span>
+                            <span id="editing-column-name" class="badge badge-green preview-col-badge"></span>
+                        </div>
+                        <div class="cleaning-strategy-grid">
+                            <label class="checkbox-label" style="margin-bottom:0;">
+                                <input type="checkbox" id="opt-remove-null" checked>
+                                <span>删除空值行</span>
+                            </label>
+                            <div class="form-group form-group-inline">
+                                <label class="form-label" for="opt-dedup">去重</label>
+                                <select id="opt-dedup" class="text-input">
+                                    <option value="">不处理</option>
+                                    <option value="first">保留首行</option>
+                                    <option value="last">保留末行</option>
+                                </select>
+                            </div>
+                            <div class="form-group form-group-inline">
+                                <label class="form-label" for="opt-minlen">最小字数</label>
+                                <input type="number" id="opt-minlen" class="text-input" value="0" min="0" max="1000">
+                            </div>
+                        </div>
+                        <div class="form-actions form-actions-divider cleaning-strategy-actions">
+                            <button type="button" id="apply-strategy-btn" class="btn btn-secondary">应用到此列</button>
+                            <button type="button" id="clear-strategy-btn" class="btn btn-ghost">清除此列策略</button>
+                            <span id="strategy-editor-hint" class="form-hint">至少启用一项规则后才能应用</span>
+                        </div>
+                    </div>
+                    <div class="configured-columns" id="configured-columns" style="display:none;">
+                        <span class="form-label preview-col-label">已配置列：</span>
+                        <div id="configured-column-list" class="configured-column-list"></div>
+                    </div>
                 </div>
                 <div class="card-body preview-actions" style="border-top: 1px solid var(--color-hairline);">
                     <button type="button" id="process-btn" class="btn btn-primary" disabled>执行清洗</button>
-                    <span id="process-hint" class="form-hint">请至少勾选一列并配置清洗策略</span>
+                    <span id="process-hint" class="form-hint">请点击表头并至少为一列应用清洗策略</span>
                 </div>
             </div>
         </div>
@@ -161,7 +203,19 @@
     const previewBody = document.getElementById('preview-body');
     const tableInfo = document.getElementById('table-info');
     const strategyArea = document.getElementById('strategy-area');
-    const strategyList = document.getElementById('strategy-list');
+    const selectedColumnDisplay = document.getElementById('selected-column-display');
+    const strategyPanelDesc = document.getElementById('strategy-panel-desc');
+    const strategyEmpty = document.getElementById('strategy-empty');
+    const strategyForm = document.getElementById('strategy-form');
+    const editingColumnName = document.getElementById('editing-column-name');
+    const optRemoveNull = document.getElementById('opt-remove-null');
+    const optDedup = document.getElementById('opt-dedup');
+    const optMinLen = document.getElementById('opt-minlen');
+    const applyStrategyBtn = document.getElementById('apply-strategy-btn');
+    const clearStrategyBtn = document.getElementById('clear-strategy-btn');
+    const strategyEditorHint = document.getElementById('strategy-editor-hint');
+    const configuredColumns = document.getElementById('configured-columns');
+    const configuredColumnList = document.getElementById('configured-column-list');
     const processBtn = document.getElementById('process-btn');
     const processHint = document.getElementById('process-hint');
 
@@ -181,6 +235,9 @@
     let currentFile = null;
     let columns = [];
     let totalRows = 0;
+    let selectedColumnIndex = null;
+    let selectedColumnName = null;
+    let strategiesByColumn = {};
 
     // ================================================================
     // File upload → auto-preview
@@ -214,8 +271,14 @@
 
             columns = data.columns;
             totalRows = data.total_rows;
+            selectedColumnIndex = null;
+            selectedColumnName = null;
+            strategiesByColumn = {};
+            clearResultsPreview();
             renderPreview(data);
-            renderStrategyConfig(columns);
+            resetStrategyEditor();
+            strategyArea.style.display = '';
+            updateProcessBtn();
         } catch (err) {
             alert('请求失败：' + err.message);
             fileInfo.textContent = '';
@@ -224,16 +287,27 @@
 
     function renderPreview(data) {
         previewHead.innerHTML = '<tr>' +
-            data.columns.map(col =>
-                `<th>${escapeHtml(col)}</th>`
+            data.columns.map((col, idx) =>
+                `<th data-col-index="${idx}" data-col-name="${escapeHtml(col)}">
+                    <span>${escapeHtml(col)}</span>
+                    <span class="col-hint">点击配置</span>
+                </th>`
             ).join('') +
             '</tr>';
 
         previewBody.innerHTML = data.rows.map(row =>
-            '<tr>' + row.map(val =>
-                `<td>${escapeHtml(val)}</td>`
+            '<tr>' + row.map((val, idx) =>
+                `<td data-col-index="${idx}">${escapeHtml(val)}</td>`
             ).join('') + '</tr>'
         ).join('');
+
+        previewHead.querySelectorAll('th').forEach(th => {
+            th.addEventListener('click', function () {
+                const colIdx = parseInt(this.dataset.colIndex);
+                const colName = this.dataset.colName;
+                selectColumnForStrategy(colIdx, colName);
+            });
+        });
 
         tableInfo.textContent = `显示前 ${data.rows.length} 行，共 ${data.total_rows} 行 · ${data.columns.length} 列`;
         previewArea.style.display = '';
@@ -245,73 +319,189 @@
     }
 
     // ================================================================
-    // Strategy config — one item per column
+    // Strategy config — click table header to edit a column
     // ================================================================
-    function renderStrategyConfig(cols) {
-        strategyList.innerHTML = cols.map(col => `
-            <div class="strategy-item" data-column="${escapeHtml(col)}">
-                <label class="checkbox-label" style="margin-bottom: 5px;">
-                    <input type="checkbox" class="col-checkbox" data-column="${escapeHtml(col)}" onchange="updateProcessBtn()">
-                    <strong>${escapeHtml(col)}</strong>
-                </label>
-                <div class="strategy-options" style="display:none; margin-left: 30px; /*margin-bottom: var(--sp-md);*/ padding: var(--sp-sm) var(--sp-md); background: var(--color-surface-soft); border-radius: var(--r-md);">
-                    <div class="form-row" style="flex-wrap: wrap; align-items: center;">
-                        <label class="checkbox-label" style="margin-bottom:0;">
-                            <input type="checkbox" class="opt-remove-null" checked> 删除空值行
-                        </label>
-                        <div class="form-group form-group-inline" style="margin-bottom:0; display:flex; align-items:center; gap:var(--sp-sm);">
-                            <span style="font-size:13px; color:var(--color-steel); white-space:nowrap;">去重：</span>
-                            <select class="opt-dedup text-input" style="width:130px; /*height:36px;*/ font-size:13px;">
-                                <option value="">不处理</option>
-                                <option value="first">保留首行</option>
-                                <option value="last">保留末行</option>
-                            </select>
-                        </div>
-                        <div class="form-group form-group-inline" style="margin-bottom:0; display:flex; align-items:center; gap:var(--sp-sm);">
-                            <span style="font-size:13px; color:var(--color-steel); white-space:nowrap;">最小字数：</span>
-                            <input type="number" class="opt-minlen text-input" value="0" min="0" max="1000" style="width:80px; height:36px;">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+    function selectColumnForStrategy(colIdx, colName) {
+        selectedColumnIndex = colIdx;
+        selectedColumnName = colName;
 
         strategyArea.style.display = '';
+        strategyEmpty.style.display = 'none';
+        strategyForm.style.display = '';
+        strategyPanelDesc.textContent = '点击其他表头可切换配置列';
+        editingColumnName.textContent = colName;
+        selectedColumnDisplay.textContent = colName;
+        selectedColumnDisplay.className = 'badge badge-green preview-col-badge';
 
-        // Bind checkbox toggle → show/hide options
-        strategyList.querySelectorAll('.col-checkbox').forEach(cb => {
-            cb.addEventListener('change', function () {
-                const item = this.closest('.strategy-item');
-                const options = item.querySelector('.strategy-options');
-                options.style.display = this.checked ? '' : 'none';
-                updateProcessBtn();
-            });
+        const saved = strategiesByColumn[colName] || getDefaultStrategy();
+        optRemoveNull.checked = !!saved.remove_null;
+        optDedup.value = saved.remove_duplicates || '';
+        optMinLen.value = saved.min_length || 0;
+
+        updatePreviewHighlights();
+        updateStrategyEditorState();
+        strategyArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function getDefaultStrategy() {
+        return {
+            remove_null: true,
+            remove_duplicates: null,
+            min_length: null,
+        };
+    }
+
+    function getEditorStrategy() {
+        const minLen = parseInt(optMinLen.value) || 0;
+        return {
+            remove_null: optRemoveNull.checked,
+            remove_duplicates: optDedup.value || null,
+            min_length: minLen > 0 ? minLen : null,
+        };
+    }
+
+    function isValidStrategy(strategy) {
+        return !!(
+            strategy.remove_null ||
+            strategy.remove_duplicates ||
+            (strategy.min_length && strategy.min_length > 0)
+        );
+    }
+
+    function resetStrategyEditor() {
+        strategyEmpty.style.display = '';
+        strategyForm.style.display = 'none';
+        strategyPanelDesc.textContent = '点击上方表格表头后，在这里配置该列规则';
+        selectedColumnDisplay.textContent = '未选择（点击表头）';
+        selectedColumnDisplay.className = 'badge badge-muted preview-col-badge';
+        configuredColumns.style.display = 'none';
+        configuredColumnList.innerHTML = '';
+        updatePreviewHighlights();
+    }
+
+    function updateStrategyEditorState() {
+        const strategy = getEditorStrategy();
+        const hasRule = isValidStrategy(strategy);
+        applyStrategyBtn.disabled = !hasRule || !selectedColumnName;
+        strategyEditorHint.style.display = hasRule ? 'none' : '';
+    }
+
+    function updatePreviewHighlights() {
+        previewHead.querySelectorAll('th').forEach(th => {
+            const colName = th.dataset.colName;
+            const colIdx = parseInt(th.dataset.colIndex);
+            const isSelected = selectedColumnIndex === colIdx;
+            const isConfigured = Object.prototype.hasOwnProperty.call(strategiesByColumn, colName);
+            const hint = th.querySelector('.col-hint');
+
+            th.classList.toggle('col-selected', isSelected);
+            th.classList.toggle('col-configured', isConfigured && !isSelected);
+            if (hint) {
+                hint.textContent = isConfigured ? '已配置' : '点击配置';
+            }
         });
 
-        // Bind option changes
-        strategyList.querySelectorAll('.opt-remove-null, .opt-dedup, .opt-minlen').forEach(el => {
-            el.addEventListener('change', updateProcessBtn);
-            if (el.tagName === 'INPUT' && el.type === 'number') {
-                el.addEventListener('input', updateProcessBtn);
-            }
+        previewBody.querySelectorAll('td').forEach(td => {
+            const colIdx = parseInt(td.dataset.colIndex);
+            const th = previewHead.querySelector(`th[data-col-index="${colIdx}"]`);
+            const colName = th ? th.dataset.colName : '';
+            const isSelected = selectedColumnIndex === colIdx;
+            const isConfigured = Object.prototype.hasOwnProperty.call(strategiesByColumn, colName);
+
+            td.classList.toggle('col-selected', isSelected);
+            td.classList.toggle('col-configured', isConfigured && !isSelected);
+        });
+
+        renderConfiguredColumnList();
+    }
+
+    function renderConfiguredColumnList() {
+        const configured = columns.filter(col => Object.prototype.hasOwnProperty.call(strategiesByColumn, col));
+        if (configured.length === 0) {
+            configuredColumns.style.display = 'none';
+            configuredColumnList.innerHTML = '';
+            return;
+        }
+
+        configuredColumns.style.display = '';
+        configuredColumnList.innerHTML = configured.map(col => `
+            <button type="button" class="configured-column-chip" data-column="${escapeHtml(col)}">
+                <span>${escapeHtml(col)}</span>
+                <span class="configured-column-chip-rules">${escapeHtml(strategySummary(strategiesByColumn[col]))}</span>
+            </button>
+        `).join('');
+
+        configuredColumnList.querySelectorAll('.configured-column-chip').forEach(chip => {
+            chip.addEventListener('click', function () {
+                const colName = this.dataset.column;
+                const colIdx = columns.indexOf(colName);
+                if (colIdx >= 0) {
+                    selectColumnForStrategy(colIdx, colName);
+                }
+            });
         });
     }
 
-    // Expose for inline onchange handler
-    window.updateProcessBtn = function () {
-        let hasActive = false;
-        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
-            const item = cb.closest('.strategy-item');
-            const removeNull = item.querySelector('.opt-remove-null').checked;
-            const dedup = item.querySelector('.opt-dedup').value;
-            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
-            if (removeNull || dedup || minLen > 0) {
-                hasActive = true;
+    function strategySummary(strategy) {
+        const parts = [];
+        if (strategy.remove_null) parts.push('删空值');
+        if (strategy.remove_duplicates === 'first') parts.push('去重保首行');
+        if (strategy.remove_duplicates === 'last') parts.push('去重保末行');
+        if (strategy.min_length && strategy.min_length > 0) parts.push(`≥${strategy.min_length}字`);
+        return parts.join(' · ');
+    }
+
+    function collectStrategies() {
+        const strategies = {};
+        columns.forEach(col => {
+            const strategy = strategiesByColumn[col];
+            if (strategy && isValidStrategy(strategy)) {
+                strategies[col] = strategy;
             }
         });
+        return strategies;
+    }
+
+    function updateProcessBtn() {
+        const hasActive = Object.keys(collectStrategies()).length > 0;
         processBtn.disabled = !hasActive;
         processHint.style.display = hasActive ? 'none' : '';
-    };
+    }
+
+    [optRemoveNull, optDedup, optMinLen].forEach(el => {
+        el.addEventListener('change', updateStrategyEditorState);
+        if (el.tagName === 'INPUT' && el.type === 'number') {
+            el.addEventListener('input', updateStrategyEditorState);
+        }
+    });
+
+    applyStrategyBtn.addEventListener('click', function () {
+        if (!selectedColumnName) return;
+
+        const strategy = getEditorStrategy();
+        if (!isValidStrategy(strategy)) {
+            updateStrategyEditorState();
+            return;
+        }
+
+        strategiesByColumn[selectedColumnName] = strategy;
+        updatePreviewHighlights();
+        updateProcessBtn();
+        clearResultsPreview();
+    });
+
+    clearStrategyBtn.addEventListener('click', function () {
+        if (!selectedColumnName) return;
+
+        delete strategiesByColumn[selectedColumnName];
+        optRemoveNull.checked = false;
+        optDedup.value = '';
+        optMinLen.value = 0;
+        updateStrategyEditorState();
+        updatePreviewHighlights();
+        updateProcessBtn();
+        clearResultsPreview();
+    });
 
     // ================================================================
     // Process button
@@ -319,23 +509,7 @@
     processBtn.addEventListener('click', async function () {
         if (!currentFile) return;
 
-        // Collect strategies
-        const strategies = {};
-        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
-            const col = cb.dataset.column;
-            const item = cb.closest('.strategy-item');
-            const removeNull = item.querySelector('.opt-remove-null').checked;
-            const dedup = item.querySelector('.opt-dedup').value;
-            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
-
-            if (removeNull || dedup || minLen > 0) {
-                strategies[col] = {
-                    remove_null: removeNull,
-                    remove_duplicates: dedup || null,
-                    min_length: minLen > 0 ? minLen : null,
-                };
-            }
-        });
+        const strategies = collectStrategies();
 
         // Show loading
         resultsContainer.style.display = 'block';
@@ -425,23 +599,7 @@
     exportBtn.addEventListener('click', async function () {
         if (!currentFile) return;
 
-        // Re-collect strategies
-        const strategies = {};
-        strategyList.querySelectorAll('.col-checkbox:checked').forEach(cb => {
-            const col = cb.dataset.column;
-            const item = cb.closest('.strategy-item');
-            const removeNull = item.querySelector('.opt-remove-null').checked;
-            const dedup = item.querySelector('.opt-dedup').value;
-            const minLen = parseInt(item.querySelector('.opt-minlen').value) || 0;
-
-            if (removeNull || dedup || minLen > 0) {
-                strategies[col] = {
-                    remove_null: removeNull,
-                    remove_duplicates: dedup || null,
-                    min_length: minLen > 0 ? minLen : null,
-                };
-            }
-        });
+        const strategies = collectStrategies();
 
         setButtonLoading(exportBtn, '导出中…');
 
@@ -477,13 +635,25 @@
     // ================================================================
     // Helpers
     // ================================================================
+    function clearResultsPreview() {
+        resultsContainer.style.display = 'none';
+        resultsLoading.style.display = 'none';
+        resultsContent.style.display = '';
+        emptyState.style.display = '';
+        exportBtn.style.display = 'none';
+    }
+
     function resetAll() {
         previewArea.style.display = 'none';
         strategyArea.style.display = 'none';
-        resultsContainer.style.display = 'none';
+        clearResultsPreview();
         fileInfo.textContent = '';
         columns = [];
         totalRows = 0;
+        selectedColumnIndex = null;
+        selectedColumnName = null;
+        strategiesByColumn = {};
+        resetStrategyEditor();
         processBtn.disabled = true;
         processHint.style.display = '';
         exportBtn.style.display = 'none';

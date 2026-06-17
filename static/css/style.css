@@ -1057,8 +1057,15 @@ input[type="number"].form-input::-webkit-outer-spin-button {
 .data-table th.col-selected .col-hint {
   color: rgba(0, 30, 43, 0.6);
 }
+.data-table th.col-configured {
+  background: var(--color-surface-feature);
+  color: var(--color-brand-green-dark);
+}
 .data-table td.col-selected {
   background: var(--color-surface-feature);
+}
+.data-table td.col-configured {
+  background: rgba(0, 237, 100, 0.08);
 }
 
 /* ----------------------------------------------------------
@@ -1445,6 +1452,82 @@ input[type="number"].form-input::-webkit-outer-spin-button {
   animation: stopwordsSlideDown 0.2s ease;
 }
 
+.strategy-editor-empty {
+  padding: var(--sp-lg);
+  background: var(--color-surface-soft);
+  border: 1px dashed var(--color-hairline-strong);
+  border-radius: var(--r-md);
+  color: var(--color-steel);
+  font-size: 14px;
+}
+
+.strategy-editor-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.cleaning-strategy-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(170px, 1fr) minmax(140px, 0.7fr);
+  gap: var(--sp-md);
+  align-items: end;
+}
+
+.cleaning-strategy-grid .form-group {
+  margin-bottom: 0;
+}
+
+.cleaning-strategy-grid .text-input {
+  width: 100%;
+}
+
+.cleaning-strategy-actions {
+  margin-top: var(--sp-lg);
+}
+
+.configured-columns {
+  margin-top: var(--sp-lg);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.configured-column-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-sm);
+}
+
+.configured-column-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--r-full);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.configured-column-chip:hover {
+  background: var(--color-surface-soft);
+  border-color: var(--color-brand-green-dark);
+}
+
+.configured-column-chip-rules {
+  color: var(--color-steel);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 /* ---- Empty State Placeholder ---- */
 .empty-state {
   display: flex;
@@ -1516,6 +1599,9 @@ input[type="number"].form-input::-webkit-outer-spin-button {
   }
   .form-row {
     flex-direction: column;
+  }
+  .cleaning-strategy-grid {
+    grid-template-columns: 1fr;
   }
 }
 
