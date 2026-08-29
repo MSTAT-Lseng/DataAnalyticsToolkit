@@ -1,124 +1,94 @@
 {% extends "base.html" %}
-{% block title %}数据分析工具箱 — 首页{% endblock %}
+{% block title %}数据分析工作台{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-container">
-        <h1 class="hero-title">数据分析工具箱</h1>
-        <p class="hero-subtitle">
-            集成分词统计、词云制作、情感分析、回归分析与维度挖掘等功能，<br>
-            一站式中文文本数据处理。
-        </p>
-        <div class="hero-actions">
-            <a href="{{ url_for('pages.segmentation') }}" class="btn btn-primary">开始使用</a>
-            <a href="#features" class="btn btn-secondary-on-dark">了解更多</a>
-        </div>
-    </div>
-</section>
+<section class="workspace-main" aria-labelledby="dashboard-title">
+        <header class="dashboard-header">
+            <div>
+                <span class="dashboard-kicker">WORKSPACE</span>
+                <h1 id="dashboard-title" class="dashboard-title">开始分析</h1>
+                <p class="dashboard-subtitle">选择左侧列表中的工具，上传数据或输入文本，进入分析流程。</p>
+            </div>
+        </header>
 
-<!-- Features Grid -->
-<section class="section" id="features">
-    <div class="container">
-        <div class="section-header">
-            <span class="eyebrow eyebrow-dark">核心功能</span>
-            <h2 class="section-title">六大分析模块</h2>
-            <p class="section-desc">覆盖从文本预处理到统计建模的完整分析流程</p>
-        </div>
-
-        <div class="features-grid">
-            <!-- 数据清洗 -->
-            <a href="{{ url_for('pages.cleaning') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 6h18"/><path d="M7 12h10"/><path d="M11 18h2"/>
-                        <line x1="3" y1="6" x2="8" y2="6"/><line x1="19" y1="12" x2="16" y2="12"/>
-                        <circle cx="10" cy="6" r="1" fill="#00ed64"/><circle cx="14" cy="12" r="1" fill="#00ed64"/>
-                    </svg>
+        <section class="operation-panel" aria-labelledby="operation-panel-title">
+            <div class="operation-card">
+                <div class="operation-card-head">
+                    <span class="panel-kicker">选择工具</span>
+                    <span class="operation-index">Selection Tool</span>
                 </div>
-                <h3 class="feature-title">数据清洗</h3>
-                <p class="feature-desc">上传表格文件，按列配置清洗策略：删除空值、去重、字数过滤，导出清洗后数据。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
 
-            <!-- 分词统计 -->
-            <a href="{{ url_for('pages.segmentation') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/>
-                        <path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/>
-                        <line x1="7" y1="12" x2="17" y2="12"/><line x1="12" y1="7" x2="12" y2="17"/>
-                    </svg>
+                <div class="operation-tool">
+                    <div class="operation-tool-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"/><path d="M7 12h10"/><path d="M11 18h2"/>
+                            <circle cx="10" cy="6" r="1.2"/><circle cx="14" cy="12" r="1.2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="operation-panel-title" class="operation-card-title">数据清洗</h2>
+                        <p class="operation-card-copy">整理表格中的空值、重复值，指定文本的长度，提取符合要求的数据。</p>
+                    </div>
                 </div>
-                <h3 class="feature-title">分词统计</h3>
-                <p class="feature-desc">中英文混合分词，智能过滤停用词，生成高频词频表与交互柱状图。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
 
-            <!-- 词云制作 -->
-            <a href="{{ url_for('pages.wordcloud') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10"/>
-                        <path d="M12 2a15.3 15.3 0 00-4 10 15.3 15.3 0 004 10"/>
-                    </svg>
+                <div class="operation-card-actions">
+                    <a href="{{ url_for('pages.cleaning') }}" class="btn btn-secondary-on-dark">打开数据清洗 <span aria-hidden="true">↗</span></a>
+                    <a href="{{ url_for('pages.segmentation') }}" class="btn btn-ghost">改用文本分析</a>
                 </div>
-                <h3 class="feature-title">词云制作</h3>
-                <p class="feature-desc">基于词频自动生成精美词云图，支持自定义颜色与形状，直观展示关键词。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
 
-            <!-- 情感分析 -->
-            <a href="{{ url_for('pages.sentiment') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                        <line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-                    </svg>
+                <div class="operation-details">
+                    <div class="operation-detail">
+                        <span class="operation-detail-label">输入格式</span>
+                        <span class="operation-detail-value">CSV / XLS / XLSX</span>
+                    </div>
+                    <div class="operation-detail">
+                        <span class="operation-detail-label">配置方式</span>
+                        <span class="operation-detail-value">按列设置规则</span>
+                    </div>
+                    <div class="operation-detail">
+                        <span class="operation-detail-label">输出结果</span>
+                        <span class="operation-detail-value">Excel 表格</span>
+                    </div>
                 </div>
-                <h3 class="feature-title">情感分析</h3>
-                <p class="feature-desc">基于 SnowNLP 的中文情感评分，自动识别积极/消极倾向，支持逐句分析。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
+            </div>
 
-            <!-- 回归分析 -->
-            <a href="{{ url_for('pages.regression') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="2" y1="20" x2="22" y2="20"/><polyline points="4 18 8 8 13 12 17 4 20 8"/>
-                    </svg>
+            <section class="quick-start" aria-labelledby="quick-start-title">
+                <div class="quick-start-head">
+                    <div>
+                        <span class="panel-kicker">QUICK START</span>
+                        <h2 id="quick-start-title" class="quick-start-title">选择输入方式</h2>
+                        <p class="quick-start-copy">从最适合当前数据的入口开始。</p>
+                    </div>
                 </div>
-                <h3 class="feature-title">回归分析</h3>
-                <p class="feature-desc">上传 CSV 或手动输入数据，自动建立线性回归模型，绘制交互散点图与回归线。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
 
-            <!-- 维度挖掘 -->
-            <a href="{{ url_for('pages.dimension_mining') }}" class="feature-card">
-                <div class="feature-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ed64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1"/>
-                        <circle cx="6.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="6.5" r="1.5"/>
-                        <circle cx="6.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/>
-                    </svg>
+                <div class="quick-start-grid">
+                    <a href="{{ url_for('pages.cleaning') }}" class="quick-action">
+                        <span class="quick-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-text">
+                            <span class="quick-action-title">上传表格</span>
+                            <span class="quick-action-desc">适合清洗、批量情感和维度挖掘</span>
+                        </span>
+                        <span class="quick-action-arrow" aria-hidden="true">↗</span>
+                    </a>
+                    <a href="{{ url_for('pages.segmentation') }}" class="quick-action">
+                        <span class="quick-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 5h14v14H5z"/><path d="M8 9h8M8 12h5M8 15h7"/>
+                            </svg>
+                        </span>
+                        <span class="quick-action-text">
+                            <span class="quick-action-title">输入文本</span>
+                            <span class="quick-action-desc">适合分词统计、词云和情感分析</span>
+                        </span>
+                        <span class="quick-action-arrow" aria-hidden="true">↗</span>
+                    </a>
                 </div>
-                <h3 class="feature-title">维度挖掘</h3>
-                <p class="feature-desc">基于关键词/正则匹配，在多维度上对文本数据进行百分制打分，量化文本在不同方向上的表现。</p>
-                <span class="feature-link">立即使用 →</span>
-            </a>
-        </div>
-    </div>
-</section>
+            </section>
 
-<!-- CTA Banner -->
-<section class="cta-banner">
-    <div class="container">
-        <h2 class="cta-title">准备好分析你的数据了吗？</h2>
-        <p class="cta-desc">选择一个工具，粘贴或上传数据，即刻获得分析结果。</p>
-        <a href="{{ url_for('pages.segmentation') }}" class="btn btn-primary">免费开始</a>
-    </div>
+        </section>
 </section>
 {% endblock %}

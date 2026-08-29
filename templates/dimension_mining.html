@@ -4,7 +4,6 @@
 {% block content %}
 <section class="page-hero">
     <div class="container">
-        <span class="eyebrow eyebrow-dark">文本挖掘</span>
         <h1 class="page-title">维度挖掘</h1>
         <p class="page-desc">基于关键词匹配与正则表达式，在多维度上对文本数据进行百分制打分，挖掘文本在不同维度上的表现强度。</p>
     </div>
@@ -16,9 +15,9 @@
         <!-- ============================================================
              Workflow Guide
              ============================================================ -->
-        <div class="card" style="background: var(--color-surface-feature); border-color: var(--color-brand-green-soft);">
+        <div class="card" style="background: var(--color-surface-soft); border-color: var(--color-hairline);">
             <div class="card-body" style="padding-bottom: var(--sp-lg);">
-                <h4 style="font-size:16px; font-weight:600; color: var(--color-brand-green-dark); margin-bottom: var(--sp-sm);">
+                <h4 style="font-size:16px; font-weight:600; color: var(--color-ink); margin-bottom: var(--sp-sm); margin: 8px 0;">
                     📋 使用介绍
                 </h4>
                 <ol class="workflow-steps">
@@ -599,7 +598,7 @@
         analyzeBtn.disabled = !canAnalyze;
         if (canAnalyze) {
             configHint.textContent = `已配置 ${dims.length} 个维度，可开始分析`;
-            configHint.style.color = 'var(--color-brand-green-mid)';
+            configHint.style.color = 'var(--color-charcoal)';
         } else {
             if (!selectedColumnName || !currentTableFile) {
                 configHint.textContent = '请先上传文件并选择列';
@@ -725,13 +724,13 @@
             orientation: 'h',
             marker: {
                 color: dims.map(d =>
-                    d.overall_score >= 70 ? '#00a35c' :
-                    d.overall_score >= 40 ? '#5c6c7a' : '#fa6e39'
+                    d.overall_score >= 70 ? '#000000' :
+                    d.overall_score >= 40 ? '#737373' : '#a3a3a3'
                 ),
             },
             text: dims.map(d => d.overall_score.toFixed(1)),
             textposition: 'outside',
-            textfont: { size: 13, color: '#001e2b' },
+            textfont: { size: 13, color: '#000000' },
             hovertemplate: '%{y}: %{x:.1f} 分<br>匹配率: %{customdata:.1f}%<extra></extra>',
             customdata: dims.map(d => d.match_rate * 100),
         }];
@@ -740,8 +739,8 @@
             xaxis: {
                 title: '整体得分（百分制）',
                 range: [0, 105],
-                gridcolor: '#eceff1',
-                titlefont: { size: 12, color: '#5c6c7a' },
+                gridcolor: '#e5e5e5',
+                titlefont: { size: 12, color: '#737373' },
             },
             yaxis: {
                 automargin: true,
@@ -751,7 +750,7 @@
             height: Math.max(200, dims.length * 50 + 80),
             plot_bgcolor: '#ffffff',
             paper_bgcolor: '#ffffff',
-            font: { family: 'Lexend, sans-serif', size: 13, color: '#1c2d38' },
+            font: { family: 'ui-sans-serif, system-ui, sans-serif', size: 13, color: '#525252' },
         };
 
         Plotly.newPlot(dimScoresChart, chartData, layout, {
@@ -790,7 +789,7 @@
         }).join('');
 
         if (rows.length > 100) {
-            detailTableBody.innerHTML += `<tr><td colspan="${2 + dimNames.length * 2}" style="text-align:center;color:var(--color-steel);padding:var(--sp-md);">
+            detailTableBody.innerHTML += `<tr><td colspan="${2 + dimNames.length * 2}" style="text-align:center;color:var(--color-body);padding:var(--sp-md);">
                 … 仅显示前 100 行，完整数据请导出 Excel 查看 …
             </td></tr>`;
         }

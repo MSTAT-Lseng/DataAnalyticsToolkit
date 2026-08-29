@@ -139,9 +139,9 @@
                 y: yTrue,
                 name: '观测值',
                 marker: {
-                    color: '#00ed64',
+                    color: '#000000',
                     size: 10,
-                    line: { color: '#00684a', width: 1 }
+                    line: { color: '#000000', width: 1 }
                 },
                 hovertemplate: '<b>%{x}, %{y}</b><extra></extra>'
             },
@@ -152,7 +152,7 @@
                 y: sortedY,
                 name: '回归线',
                 line: {
-                    color: '#fa6e39',
+                    color: '#737373',
                     width: 2,
                     dash: 'solid'
                 },
@@ -161,15 +161,15 @@
         ], {
             margin: { t: 30, r: 30, b: 60, l: 60 },
             xaxis: {
-                title: { text: r.x_label, font: { size: 14, color: '#3d4f5b' } }
+                title: { text: r.x_label, font: { size: 14, color: '#737373' } }
             },
             yaxis: {
-                title: { text: r.y_label, font: { size: 14, color: '#3d4f5b' } }
+                title: { text: r.y_label, font: { size: 14, color: '#737373' } }
             },
             legend: { x: 0.01, y: 0.99 },
             plot_bgcolor: '#ffffff',
             paper_bgcolor: '#ffffff',
-            font: { family: 'Lexend, sans-serif', color: '#001e2b' }
+            font: { family: 'ui-sans-serif, system-ui, sans-serif', color: '#525252' }
         }, { responsive: true });
     }
 })();

@@ -3,14 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}数据分析工具箱{% endblock %}</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap');
-    </style>
+    <title>{% block title %}数据分析工作台{% endblock %}</title>
     <!-- Plotly for charts -->
     <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
     <!-- Custom CSS -->
@@ -18,63 +11,90 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
             <a href="{{ url_for('pages.index') }}" class="nav-logo">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                    <rect x="2" y="2" width="8" height="8" rx="2" fill="#00ed64"/>
-                    <rect x="14" y="2" width="8" height="8" rx="2" fill="#00ed64" opacity="0.7"/>
-                    <rect x="2" y="14" width="8" height="8" rx="2" fill="#00ed64" opacity="0.5"/>
-                    <rect x="14" y="14" width="8" height="8" rx="2" fill="#00ed64" opacity="0.85"/>
-                </svg>
+                <span class="logo-mark" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </span>
                 <span class="nav-logo-text">DataAnalytics</span>
             </a>
-            <ul class="nav-links">
-                <li><a href="{{ url_for('pages.segmentation') }}" class="nav-link">分词统计</a></li>
-                <li><a href="{{ url_for('pages.wordcloud') }}" class="nav-link">词云制作</a></li>
-                <li><a href="{{ url_for('pages.cleaning') }}" class="nav-link">数据清洗</a></li>
-                <li><a href="{{ url_for('pages.sentiment') }}" class="nav-link">情感分析</a></li>
-                <li><a href="{{ url_for('pages.regression') }}" class="nav-link">回归分析</a></li>
-                <li><a href="{{ url_for('pages.dimension_mining') }}" class="nav-link">维度挖掘</a></li>
-            </ul>
+            <div class="nav-context">
+                <span class="nav-context-label">数据分析工作台</span>
+            </div>
+            <div class="nav-actions">
+                <a href="{{ url_for('pages.index') }}" class="nav-home">首页</a>
+                <a href="{{ url_for('pages.cleaning') }}" class="btn btn-primary">开始分析 <span aria-hidden="true">↗</span></a>
+            </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
+    <div class="workspace-shell">
+        <aside class="workspace-sidebar" aria-label="分析工具列表">
+            <div class="workspace-sidebar-head">
+                <span class="workspace-sidebar-label">分析工具</span>
+            </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h4 class="footer-heading">工具</h4>
-                    <a href="{{ url_for('pages.cleaning') }}" class="footer-link">数据清洗</a>
-                    <a href="{{ url_for('pages.segmentation') }}" class="footer-link">分词统计</a>
-                    <a href="{{ url_for('pages.wordcloud') }}" class="footer-link">词云制作</a>
+            <nav class="tool-list">
+                <a href="{{ url_for('pages.cleaning') }}" class="tool-nav-item{% if request.endpoint in ['pages.index', 'pages.cleaning'] %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-broom-sparkles-icon lucide-broom-sparkles"><path d="M11 2v2"/><path d="M12 3h-2"/><path d="M13.5 10.5 22 2"/><path d="M14.734 13.841a2 2 0 00-.314-2.42L12.58 9.58a2 2 0 00-2.421-.314l-7.657 4.461A1 1 0 002.3 15.3l6.403 6.403a1 1 0 001.571-.204z"/><path d="M20 15v4"/><path d="M22 17h-4"/><path d="M4 4v4"/><path d="m5 18 2-2"/><path d="M6 6H2"/><path d="m7.699 10.7 5.602 5.601"/></svg>
+                    </span>
+                    <span>数据清洗</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href="{{ url_for('pages.segmentation') }}" class="tool-nav-item{% if request.endpoint == 'pages.segmentation' %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-whole-word-icon lucide-whole-word"><circle cx="7" cy="12" r="3"/><path d="M10 9v6"/><circle cx="17" cy="12" r="3"/><path d="M14 7v8"/><path d="M22 17v1c0 .5-.5 1-1 1H3c-.5 0-1-.5-1-1v-1"/></svg>
+                    </span>
+                    <span>分词统计</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href="{{ url_for('pages.wordcloud') }}" class="tool-nav-item{% if request.endpoint == 'pages.wordcloud' %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud-icon lucide-cloud"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                    </span>
+                    <span>词云制作</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href="{{ url_for('pages.sentiment') }}" class="tool-nav-item{% if request.endpoint == 'pages.sentiment' %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-face-slightly-smiling-icon lucide-face-slightly-smiling"><path d="M15 10V9"/><path d="M16.472 15a6 6 0 01-8.943 0"/><path d="M9 10V9"/><circle cx="12" cy="12" r="10"/></svg>
+                    </span>
+                    <span>情感分析</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href="{{ url_for('pages.regression') }}" class="tool-nav-item{% if request.endpoint == 'pages.regression' %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-scatter-icon lucide-chart-scatter"><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="18.5" cy="5.5" r=".5" fill="currentColor"/><circle cx="11.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="7.5" cy="16.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="14.5" r=".5" fill="currentColor"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/></svg>
+                    </span>
+                    <span>回归分析</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href="{{ url_for('pages.dimension_mining') }}" class="tool-nav-item{% if request.endpoint == 'pages.dimension_mining' %} active{% endif %}">
+                    <span class="tool-nav-index">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-proportions-icon lucide-proportions"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M12 9v11"/><path d="M2 9h13a2 2 0 0 1 2 2v9"/></svg>
+                    </span>
+                    <span>维度挖掘</span>
+                    <span class="tool-nav-arrow" aria-hidden="true">↗</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+
+            <footer class="footer">
+                <div class="footer-container">
+                    <div class="footer-meta">
+                        <span></span>
+                        <span>© 2026 过气萌新, DataAnalytics Toolkit.</span>
+                        <span></span>
+                    </div>
                 </div>
-                <div class="footer-col">
-                    <h4 class="footer-heading">分析</h4>
-                    <a href="{{ url_for('pages.sentiment') }}" class="footer-link">情感分析</a>
-                    <a href="{{ url_for('pages.regression') }}" class="footer-link">回归分析</a>
-                    <a href="{{ url_for('pages.dimension_mining') }}" class="footer-link">维度挖掘</a>
-                </div>
-                <div class="footer-col">
-                    <h4 class="footer-heading">关于</h4>
-                    <p class="footer-text">
-                        轻量级中文文本数据在线分析平台 <br>
-                        Based on Python + Flask
-                    </p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2026 DataAnalytics Toolkit. Produced by GuoQi Mengxin.</p>
-            </div>
-        </div>
-    </footer>
+            </footer>
+        </main>
+    </div>
 
     {% block scripts %}{% endblock %}
 </body>

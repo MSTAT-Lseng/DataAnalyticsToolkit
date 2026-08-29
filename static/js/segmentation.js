@@ -539,8 +539,8 @@
             x: labels,
             y: values,
             marker: {
-                color: '#00ed64',
-                line: { color: '#00684a', width: 1 }
+                color: '#000000',
+                line: { color: '#000000', width: 1 }
             },
             text: values,
             textposition: 'outside',
@@ -548,15 +548,15 @@
         }], {
             margin: { t: 30, r: 30, b: 80, l: 50 },
             xaxis: {
-                title: { text: '词语', font: { size: 14, color: '#3d4f5b' } },
+                title: { text: '词语', font: { size: 14, color: '#737373' } },
                 tickangle: -30
             },
             yaxis: {
-                title: { text: '频次', font: { size: 14, color: '#3d4f5b' } }
+                title: { text: '频次', font: { size: 14, color: '#737373' } }
             },
             plot_bgcolor: '#ffffff',
             paper_bgcolor: '#ffffff',
-            font: { family: 'Lexend, sans-serif', color: '#001e2b' }
+            font: { family: 'ui-sans-serif, system-ui, sans-serif', color: '#525252' }
         }, { responsive: true });
     }
 

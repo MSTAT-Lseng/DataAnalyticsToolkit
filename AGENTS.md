@@ -15,7 +15,7 @@
 5. **回归分析**：支持 CSV 上传或手动输入数据，执行一元线性回归并用 Plotly 绘图。
 6. **维度挖掘**：基于用户配置的关键词/正则规则，对文本列进行多维度百分制评分、汇总和导出。
 
-**视觉设计**：继续遵循 `DESIGN.md` 中的 MongoDB 风格设计系统，使用深色 teal（`#001e2b`）、品牌绿（`#00ed64`）、Lexend / Source Code Pro 字体、统一圆角和间距体系。
+**视觉设计**：遵循 `DESIGN.md` 中的 Ollama 风格设计系统，使用纯白画布（`#ffffff`）、纯黑主色（`#000000`）、中性灰文本与细边线，采用 SF Pro Rounded / 系统无衬线 / 系统等宽字体。交互控件使用全圆角胶囊形，卡片使用 12px 圆角，不使用渐变或装饰性阴影。
 
 **数据流**：
 
@@ -50,7 +50,7 @@
 
 | 类别 | 实现 | 用途 |
 |------|------|------|
-| UI | 原生 HTML/CSS + `static/css/style.css` | MongoDB 风格页面、组件、响应式布局 |
+| UI | 原生 HTML/CSS + `static/css/style.css` | Ollama 风格页面、组件、响应式布局 |
 | 图表 | Plotly.js 3.0.0 CDN | 分词柱状图、回归散点图/回归线、分析可视化 |
 | 交互 | 原生 JavaScript | Ajax、Tab、表格预览、列选择、导出下载 |
 | 公共脚本 | `static/js/common.js` | HTML 转义、CSV 解析、文件读取等公共函数 |
@@ -80,8 +80,8 @@ DataAnalyticsToolkit/
 │   └── dimension_mining.py        # 维度挖掘 API
 │
 ├── templates/                     # Jinja2 页面模板
-│   ├── base.html                  # 基础模板：导航、Plotly、公共样式、页脚
-│   ├── index.html                 # 首页：六大功能入口
+│   ├── base.html                  # 基础模板：顶部工具栏、持久侧栏、Plotly、公共样式、页脚
+│   ├── index.html                 # 工作台首页：左侧功能列表、右侧操作面板
 │   ├── cleaning.html              # 数据清洗页面
 │   ├── segmentation.html          # 分词统计页面
 │   ├── wordcloud.html             # 词云制作页面
@@ -97,7 +97,7 @@ DataAnalyticsToolkit/
 │   │   ├── segmentation.js        # 分词页交互
 │   │   └── regression.js          # 回归页交互
 │   └── images/
-│       └── banner_background.png  # Hero 背景图
+│       └── banner_background.png  # 历史资源，当前页面不再引用
 │
 ├── utils/                         # 核心业务处理模块
 │   ├── __init__.py
@@ -144,7 +144,7 @@ def create_app(config_class=Config) -> Flask:
 
 | 路由 | 模板 | 说明 |
 |------|------|------|
-| `/` | `index.html` | 首页：六大功能导航卡片 |
+| `/` | `index.html` | 面板型工作台首页：左侧工具列表、右侧操作面板 |
 | `/cleaning` | `cleaning.html` | 数据清洗 |
 | `/segmentation` | `segmentation.html` | 分词统计 |
 | `/wordcloud` | `wordcloud.html` | 词云制作 |
@@ -344,13 +344,15 @@ def mine_dimensions(
 
 ## 八、当前前端实现进度
 
-- `base.html` 已包含导航栏、页脚、Plotly CDN 和全局 CSS。
-- `index.html` 已更新为六大功能模块入口。
+- `base.html` 已包含顶部工具栏、持久化分析工具侧栏、页脚、Plotly CDN 和全局 CSS。
+- 侧栏在首页和六个功能页面中都会显示；当前页面对应的工具通过 `request.endpoint` 自动高亮，桌面端使用粘性定位，移动端折叠为顶部列表。
+- `index.html` 是面板型工作台首页，不再使用 Hero、功能介绍卡片或 CTA 横幅；左侧展示六个工具，右侧展示当前默认的数据清洗操作面板和快速入口。
 - `segmentation.html` 使用 `common.js` + `segmentation.js`。
 - `regression.html` 使用 `common.js` + `regression.js`。
 - `cleaning.html`、`sentiment.html`、`wordcloud.html`、`dimension_mining.html` 当前主要使用页内脚本，并复用 `common.js`。
 - 所有上传型页面都采用 Ajax/FormData 与后端 API 交互。
 - 词频、情感、清洗和维度挖掘相关结果支持 Excel 下载。
+- `static/js/segmentation.js`、`static/js/regression.js` 以及维度挖掘页内 Plotly 图表使用黑白中性色，与新的界面设计保持一致。
 
 后续如果继续扩展前端交互，优先将页面内过长脚本拆入 `static/js/<module>.js`，但不要在没有必要时做大规模重构。
 
@@ -458,8 +460,10 @@ xlrd>=2.0
 - 表格上传、DataFrame 预览、Excel 下载优先复用 `utils.file_helpers`。
 - 上传文件应使用临时文件，用完删除，不要长期保存在 `uploads/`。
 - Matplotlib 必须使用 `Agg` 后端。
-- 前端继续复用 `DESIGN.md` 和 `static/css/style.css` 的设计系统。
+- 前端继续复用 `DESIGN.md` 和 `static/css/style.css` 的 Ollama 风格设计系统：白色画布、黑色主操作、细灰边线、全圆角控件、无渐变和无装饰性阴影。
 - 新增页面应继承 `templates/base.html`。
+- 新增页面应继续使用公共侧栏；侧栏工具项需要根据当前 Blueprint endpoint 保持正确的 active 状态。
+- 桌面端公共侧栏保持粘性定位，移动端改为页面顶部的响应式工具列表。
 - 新增图表优先使用已引入的 Plotly.js。
 - 不要把新依赖加入代码后忘记同步 `requirements.txt`。
 - 不要提交 `venv/`、临时上传文件、运行日志等本地产物。
