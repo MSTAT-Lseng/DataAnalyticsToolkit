@@ -109,8 +109,8 @@
                             </div>
                         </div>
                         <div class="form-actions form-actions-divider cleaning-strategy-actions">
-                            <button type="button" id="apply-strategy-btn" class="btn btn-secondary">应用到此列</button>
-                            <button type="button" id="clear-strategy-btn" class="btn btn-ghost">清除此列策略</button>
+                            <button type="button" id="apply-strategy-btn" class="btn btn-secondary btn-greenokay-outline">应用到此列</button>
+                            <button type="button" id="clear-strategy-btn" class="btn btn-ghost btn-redfailed-outline">清除此列策略</button>
                             <span id="strategy-editor-hint" class="form-hint">至少启用一项规则后才能应用</span>
                         </div>
                     </div>
@@ -120,7 +120,7 @@
                     </div>
                 </div>
                 <div class="card-body preview-actions" style="border-top: 1px solid var(--color-hairline);">
-                    <button type="button" id="process-btn" class="btn btn-primary" disabled>执行清洗</button>
+                    <button type="button" id="process-btn" class="btn btn-primary btn-greenokay" disabled>执行清洗</button>
                     <span id="process-hint" class="form-hint">请点击表头并至少为一列应用清洗策略</span>
                 </div>
             </div>
@@ -171,7 +171,7 @@
                         <h3 class="card-title">清洗后数据预览</h3>
                         <span id="cleaned-info" class="text-muted" style="font-size:13px; margin-top: auto; margin-bottom: auto;"></span>
                         <div class="card-actions">
-                            <button type="button" id="export-btn" class="btn btn-ghost" style="display:none;">导出清洗结果</button>
+                            <button type="button" id="export-btn" class="btn btn-ghost export-btn" style="display:none;">导出清洗结果</button>
                         </div>
                     </div>
                     <div class="table-wrap preview-scroll">

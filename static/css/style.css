@@ -23,6 +23,10 @@
   --color-terminal-red: #ff5f56;
   --color-terminal-yellow: #ffbd2e;
   --color-terminal-green: #27c93f;
+  --color-action-sun: #f5c451;
+  --color-action-aqua: #8bd8cf;
+  --color-action-coral: #ff9f87;
+  --color-action-lilac: #b9b4ff;
 
   --font-display: "SF Pro Rounded", ui-rounded, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -135,7 +139,7 @@ textarea:focus-visible {
 
 .logo-mark span {
   display: block;
-  background: var(--color-primary);
+  background: /*var(--color-primary)*/ #43A047;
   border-radius: 3px;
 }
 
@@ -348,6 +352,40 @@ textarea:focus-visible {
   background: var(--color-ink-deep);
   border-color: var(--color-ink-deep);
   color: #ffffff;
+}
+
+.btn-greenokay {
+  background: #43a047 !important;
+  color: white !important;
+  border: 1px solid #43a047 !important;
+}
+
+.btn-greenokay:hover {
+  background: #388e3c !important;
+  color: white !important;
+  border: 1px solid #388e3c !important;
+}
+
+.btn-greenokay-outline {
+  color: #2e7d32 !important;
+  background: #fff !important;
+  border: 1px solid #2e7d32 !important;
+}
+
+.btn-greenokay-outline:hover {
+  color: #1b5e20 !important;
+  background: #fdfdfd !important;
+  border: 1px solid #1b5e20 !important;
+}
+
+.btn-redfailed-outline {
+  color: #c62828 !important;
+  border: 1px solid #c62828 !important;
+}
+
+.btn-redfailed-outline:hover {
+  color: #b71c1c !important;
+  border: 1px solid #b71c1c !important;
 }
 
 .btn-secondary {
@@ -1462,7 +1500,7 @@ input[type="color"].text-input {
 
 .operation-card {
   padding: 32px;
-  background: var(--color-surface-dark);
+  background: /*var(--color-surface-dark)*/ #37474F;
   border-radius: var(--r-lg);
   color: var(--color-on-dark);
 }
@@ -1529,13 +1567,107 @@ input[type="color"].text-input {
 }
 
 .operation-card-actions .btn-ghost {
-  border-color: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: var(--color-action-aqua);
+  border-color: var(--color-action-aqua);
+  color: var(--color-ink);
 }
 
 .operation-card-actions .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: #6fc5ba;
+  border-color: #6fc5ba;
+  color: var(--color-ink);
+}
+
+.operation-card-actions .btn-secondary-on-dark {
+  background: var(--color-action-sun);
+  border-color: var(--color-action-sun);
+  color: var(--color-ink);
+}
+
+.operation-card-actions .btn-secondary-on-dark:hover {
+  background: #e5b33b;
+  border-color: #e5b33b;
+  color: var(--color-ink);
+}
+
+/* Module accents for the operation controls on each tool page. */
+body.page-pages-segmentation {
+  --module-accent: #4b6fe8;
+  --module-accent-hover: #385bd0;
+  --module-accent-soft: rgba(75, 111, 232, 0.1);
+  --module-on-accent: #ffffff;
+}
+
+body.page-pages-wordcloud {
+  --module-accent: #8a55c7;
+  --module-accent-hover: #7040aa;
+  --module-accent-soft: rgba(138, 85, 199, 0.1);
+  --module-on-accent: #ffffff;
+}
+
+body.page-pages-sentiment {
+  --module-accent: #d45b45;
+  --module-accent-hover: #bb4834;
+  --module-accent-soft: rgba(212, 91, 69, 0.1);
+  --module-on-accent: #ffffff;
+}
+
+body.page-pages-regression {
+  --module-accent: #1f9d8b;
+  --module-accent-hover: #147f70;
+  --module-accent-soft: rgba(31, 157, 139, 0.1);
+  --module-on-accent: #ffffff;
+}
+
+body.page-pages-dimension_mining {
+  --module-accent: #e4b63f;
+  --module-accent-hover: #d0a32b;
+  --module-accent-soft: rgba(228, 182, 63, 0.15);
+  --module-on-accent: #171717;
+}
+
+body[class*="page-pages-"] .main-content .btn-primary {
+  background: var(--module-accent);
+  border-color: var(--module-accent);
+  color: var(--module-on-accent);
+}
+
+body[class*="page-pages-"] .main-content .btn-primary:hover,
+body[class*="page-pages-"] .main-content .btn-primary:active {
+  background: var(--module-accent-hover);
+  border-color: var(--module-accent-hover);
+  color: var(--module-on-accent);
+}
+
+body[class*="page-pages-"] .main-content .btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+body[class*="page-pages-"] .main-content .btn-secondary,
+body[class*="page-pages-"] .main-content .card-actions .btn-ghost, .export-btn {
+  background: var(--color-canvas);
+  border-color: var(--module-accent);
+  color: var(--module-accent-hover);
+}
+
+body[class*="page-pages-"] .main-content .btn-secondary:hover,
+body[class*="page-pages-"] .main-content .card-actions .btn-ghost:hover, .export-btn:hover {
+  background: var(--module-accent-soft);
+  border-color: var(--module-accent-hover);
+  color: var(--module-accent-hover);
+}
+
+.export-btn {
+  background: #fff !important;
+  border-color: #4b6fe8 !important;
+  color: #385bd0 !important;
+}
+
+.export-btn:hover {
+  background: rgba(75, 111, 232, 0.1) !important;
+  border-color: #385bd0 !important;
+  color: #385bd0 !important;
 }
 
 .operation-details {
@@ -1617,6 +1749,14 @@ input[type="color"].text-input {
   background: var(--color-surface-soft);
   border-radius: var(--r-full);
   color: var(--color-ink);
+}
+
+.quick-action:nth-child(1) .quick-action-icon {
+  background: /*var(--color-action-coral)*/ #FFD54F;
+}
+
+.quick-action:nth-child(2) .quick-action-icon {
+  background: /*var(--color-action-lilac)*/ #B2DFDB;
 }
 
 .quick-action-icon svg {

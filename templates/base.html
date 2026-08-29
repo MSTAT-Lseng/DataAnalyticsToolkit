@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="page-{{ (request.endpoint or 'unknown')|replace('.', '-') }}">
     <nav class="navbar">
         <div class="nav-container">
             <a href="{{ url_for('pages.index') }}" class="nav-logo">
