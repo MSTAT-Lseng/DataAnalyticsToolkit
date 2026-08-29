@@ -48,6 +48,33 @@
     let allWords = [];              // full word list for fold/export
     let folded = true;             // whether table is currently folded
 
+    const chartColorStops = ['#388e3c', '#7cb342', '#cddc39', '#ffee58', '#ffca28'];
+
+    function interpolateColor(start, end, ratio) {
+        const startRgb = start.match(/[\da-f]{2}/gi).map(value => parseInt(value, 16));
+        const endRgb = end.match(/[\da-f]{2}/gi).map(value => parseInt(value, 16));
+        const rgb = startRgb.map((value, index) =>
+            Math.round(value + (endRgb[index] - value) * ratio)
+        );
+        return `rgb(${rgb.join(', ')})`;
+    }
+
+    function getChartColors(count) {
+        if (count <= 1) return [chartColorStops[0]];
+
+        const lastStop = chartColorStops.length - 1;
+        return Array.from({ length: count }, (_, index) => {
+            const position = (index / (count - 1)) * lastStop;
+            const stopIndex = Math.min(Math.floor(position), lastStop - 1);
+            const ratio = position - stopIndex;
+            return interpolateColor(
+                chartColorStops[stopIndex],
+                chartColorStops[stopIndex + 1],
+                ratio
+            );
+        });
+    }
+
     // ================================================================
     // Tab Switching
     // ================================================================
@@ -539,8 +566,8 @@
             x: labels,
             y: values,
             marker: {
-                color: '#000000',
-                line: { color: '#000000', width: 1 }
+                color: getChartColors(values.length),
+                line: { color: 'rgba(255, 255, 255, 0.75)', width: 1 }
             },
             text: values,
             textposition: 'outside',
