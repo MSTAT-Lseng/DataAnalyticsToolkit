@@ -105,9 +105,15 @@ def api_cleaning_export():
 
             wb = openpyxl.Workbook()
 
-            # Sheet 1: 清洗统计
-            ws_stats = wb.active
-            ws_stats.title = "清洗统计"
+            # Sheet 1: 清洗后数据
+            ws_cleaned = wb.active
+            ws_cleaned.title = "清洗后数据"
+            ws_cleaned.append([str(c) for c in cleaned_df.columns.tolist()])
+            for _, row in cleaned_df.iterrows():
+                ws_cleaned.append([str(v) if pd.notna(v) else "" for v in row.tolist()])
+
+            # Sheet 2: 清洗统计
+            ws_stats = wb.create_sheet(title="清洗统计")
             ws_stats.append(["指标", "数值"])
             ws_stats.append(["原始行数", stats["original_rows"]])
             ws_stats.append(["清洗后行数", stats["cleaned_rows"]])
@@ -123,12 +129,6 @@ def api_cleaning_export():
             ws_stats.column_dimensions["B"].width = 16
             ws_stats.column_dimensions["C"].width = 12
             ws_stats.column_dimensions["D"].width = 40
-
-            # Sheet 2: 清洗后数据
-            ws_data = wb.create_sheet(title="清洗后数据")
-            ws_data.append([str(c) for c in cleaned_df.columns.tolist()])
-            for _, row in cleaned_df.iterrows():
-                ws_data.append([str(v) if pd.notna(v) else "" for v in row.tolist()])
 
             return send_excel(wb, "清洗后数据.xlsx")
     except ValueError as exc:

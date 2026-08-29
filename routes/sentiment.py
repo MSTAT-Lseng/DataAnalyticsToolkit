@@ -79,23 +79,9 @@ def api_sentiment_export():
 
         wb = openpyxl.Workbook()
 
-        # ---- Sheet 1: 整体摘要 ----
-        ws_summary = wb.active
-        ws_summary.title = "情感分析摘要"
-        ws_summary.append(["指标", "数值"])
-        ws_summary.append(["整体情感得分", round(summary.get("score", 0), 4)])
-        ws_summary.append(["整体情感标签", summary.get("label", "--")])
-        ws_summary.append(["积极占比", f"{round(summary.get('positive_ratio', 0) * 100, 1)}%"])
-        ws_summary.append(["中性占比", f"{round(summary.get('neutral_ratio', 0) * 100, 1)}%"])
-        ws_summary.append(["消极占比", f"{round(summary.get('negative_ratio', 0) * 100, 1)}%"])
-        ws_summary.append(["分析条目数", summary.get("count", len(rows))])
-        if source_info:
-            ws_summary.append(["数据来源", source_info])
-        ws_summary.column_dimensions["A"].width = 20
-        ws_summary.column_dimensions["B"].width = 20
-
-        # ---- Sheet 2: 详细结果 ----
-        ws_detail = wb.create_sheet(title="详细分析结果")
+        # ---- Sheet 1: 详细结果 ----
+        ws_detail = wb.active
+        ws_detail.title = "详细分析结果"
         has_custom = any(
             (r.get("custom_words") and len(r["custom_words"]) > 0)
             for r in rows
@@ -121,6 +107,20 @@ def api_sentiment_export():
         ws_detail.column_dimensions["D"].width = 10
         if has_custom:
             ws_detail.column_dimensions["E"].width = 24
+
+        # ---- Sheet 2: 整体摘要 ----
+        ws_summary = wb.create_sheet(title="情感分析摘要")
+        ws_summary.append(["指标", "数值"])
+        ws_summary.append(["整体情感得分", round(summary.get("score", 0), 4)])
+        ws_summary.append(["整体情感标签", summary.get("label", "--")])
+        ws_summary.append(["积极占比", f"{round(summary.get('positive_ratio', 0) * 100, 1)}%"])
+        ws_summary.append(["中性占比", f"{round(summary.get('neutral_ratio', 0) * 100, 1)}%"])
+        ws_summary.append(["消极占比", f"{round(summary.get('negative_ratio', 0) * 100, 1)}%"])
+        ws_summary.append(["分析条目数", summary.get("count", len(rows))])
+        if source_info:
+            ws_summary.append(["数据来源", source_info])
+        ws_summary.column_dimensions["A"].width = 20
+        ws_summary.column_dimensions["B"].width = 20
 
         return send_excel(wb, "情感分析结果.xlsx")
     except Exception as exc:
