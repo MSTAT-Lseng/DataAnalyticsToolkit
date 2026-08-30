@@ -348,6 +348,7 @@
         const chartHeight = networkChart.clientHeight || 600;
         const aspect = Math.max(0.85, Math.min(2.4, chartWidth / chartHeight));
         const positions = makeLayout(result.nodes, result.links, aspect);
+        const nodeSizes = makeNodeSizes(result.nodes);
         const edgeGroups = new Map();
         result.links.forEach(link => {
             const weight = link.weight;
@@ -363,8 +364,8 @@
             y: group.y,
             hoverinfo: 'none',
             line: {
-                color: 'rgba(115, 115, 115, 0.35)',
-                width: Math.min(7, 1 + Math.sqrt(weight)),
+                color: 'rgba(70, 70, 70, 0.62)',
+                width: Math.min(2, 0.55 + Math.sqrt(weight) * 0.36),
             },
         }));
         const nodeTrace = {
@@ -374,11 +375,13 @@
             y: result.nodes.map(node => positions[node.id].y),
             text: result.nodes.map(node => node.label),
             textposition: 'top center',
-            textfont: { size: 11, color: '#525252' },
+            textfont: { size: 11, color: '#c62828' },
             customdata: result.nodes.map(node => [node.count, node.rank]),
             hovertemplate: '<b>%{text}</b><br>词频：%{customdata[0]}<br>排名：%{customdata[1]}<extra></extra>',
             marker: {
-                size: result.nodes.map(node => 18 + Math.min(34, Math.sqrt(node.count) * 7)),
+                size: nodeSizes,
+                sizemode: 'diameter',
+                sizemin: 14,
                 color: '#7a6bb5',
                 opacity: 0.9,
                 line: { color: '#ffffff', width: 1.5 },
@@ -406,8 +409,34 @@
         }, { responsive: true, displaylogo: false });
     }
 
+    function makeNodeSizes(nodes) {
+        const counts = nodes.map(node => Math.max(0, Number(node.count) || 0));
+        if (!counts.length) return [];
+        const minCount = Math.min(...counts);
+        const maxCount = Math.max(...counts);
+        const minSize = 16;
+        const maxSize = 52;
+
+        if (maxCount <= minCount) {
+            return nodes.map(() => 24);
+        }
+
+        const minLog = Math.log1p(minCount);
+        const logRange = Math.log1p(maxCount) - minLog;
+        return counts.map(count => {
+            const ratio = (Math.log1p(count) - minLog) / logRange;
+            return minSize + ratio * (maxSize - minSize);
+        });
+    }
+
     function makeLayout(nodes, links, aspect = 1) {
         const positions = {};
+        const connectedNodeIds = new Set();
+        links.forEach(link => {
+            connectedNodeIds.add(link.source);
+            connectedNodeIds.add(link.target);
+        });
+        const hasConnectedNodes = connectedNodeIds.size > 0;
         const total = Math.max(nodes.length, 1);
         nodes.forEach((node, index) => {
             const angle = (Math.PI * 2 * index) / total;
@@ -420,6 +449,29 @@
         for (let pass = 0; pass < 56; pass += 1) {
             const delta = {};
             nodes.forEach(node => { delta[node.id] = { x: 0, y: 0 }; });
+
+            // Keep isolated nodes near the connected component instead of
+            // letting repulsion push them to the edge of the viewport.
+            let coreCenterX = 0;
+            let coreCenterY = 0;
+            if (hasConnectedNodes) {
+                const connectedNodes = nodes.filter(node => connectedNodeIds.has(node.id));
+                coreCenterX = connectedNodes.reduce(
+                    (sum, node) => sum + positions[node.id].x,
+                    0,
+                ) / connectedNodes.length;
+                coreCenterY = connectedNodes.reduce(
+                    (sum, node) => sum + positions[node.id].y,
+                    0,
+                ) / connectedNodes.length;
+                nodes.forEach(node => {
+                    if (connectedNodeIds.has(node.id)) return;
+                    const position = positions[node.id];
+                    delta[node.id].x += (coreCenterX - position.x) * 0.035;
+                    delta[node.id].y += (coreCenterY - position.y) * 0.035;
+                });
+            }
+
             for (let i = 0; i < nodes.length; i += 1) {
                 for (let j = i + 1; j < nodes.length; j += 1) {
                     const a = positions[nodes[i].id];
