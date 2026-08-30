@@ -6,7 +6,7 @@
 
 ## 一、当前定位
 
-本平台是一个面向中文文本和表格数据的数据分析 Web 应用，提供七个已落地功能模块：
+本平台是一个面向中文文本和表格数据的数据分析 Web 应用，提供八个已落地功能模块：
 
 1. **数据清洗**：上传 CSV / Excel，按列配置删除空值、去重、最小字数过滤，并导出清洗结果。
 2. **分词统计**：支持文本输入和表格列分词，支持停用词、自定义词典、词频图表和 Excel 导出。
@@ -15,6 +15,7 @@
 5. **社会网络关系图**：支持文本或表格列分词，导入分词统计结果作为分词规则，并基于词语共现绘制关系图。
 6. **回归分析**：支持 CSV / XLS / XLSX 上传，选择至少两列 1-10 数值列并对所有列组合执行一元线性回归，用 Plotly 绘制一张或多张回归图。
 7. **热力分析**：上传 CSV / Excel，选择至少两列 1-10 数值列，计算列间 Pearson 相关系数并用 Plotly 绘制热力图。
+8. **聚类分析**：支持按文本句子或表格列进行 TF-IDF + K-Means 聚类。
 
 **视觉设计**：遵循 `DESIGN.md` 中的 Ollama 风格设计系统，使用纯白画布（`#ffffff`）、纯黑主色（`#000000`）、中性灰文本与细边线，采用 SF Pro Rounded / 系统无衬线 / 系统等宽字体。交互控件使用全圆角胶囊形，卡片使用 12px 圆角，不使用渐变或装饰性阴影。
 
@@ -55,7 +56,7 @@
 | 图表 | Plotly.js 3.0.0 CDN | 分词柱状图、回归散点图/回归线、分析可视化 |
 | 交互 | 原生 JavaScript | Ajax、Tab、表格预览、列选择、导出下载 |
 | 公共脚本 | `static/js/common.js` | HTML 转义、CSV 解析、文件读取等公共函数 |
-| 独立脚本 | `segmentation.js`、`regression.js`、`heat_analysis.js` | 分词、回归与热力分析页面主交互 |
+| 独立脚本 | `segmentation.js`、`regression.js`、`heat_analysis.js`、`clustering.js` | 分词、回归、热力与聚类页面主交互 |
 | 页内脚本 | cleaning / sentiment / wordcloud 模板 | 这些页面当前主要在模板内维护交互逻辑 |
 
 ---
@@ -90,7 +91,8 @@ DataAnalyticsToolkit/
 │   ├── sentiment.html             # 情感分析页面
 │   ├── social_network.html         # 社会网络关系图页面
 │   ├── regression.html            # 回归分析页面
-│   └── heat_analysis.html         # 热力分析页面
+│   ├── heat_analysis.html         # 热力分析页面
+│   └── clustering.html            # 聚类分析页面
 │
 ├── static/
 │   ├── css/
@@ -100,7 +102,8 @@ DataAnalyticsToolkit/
 │   │   ├── segmentation.js        # 分词页交互
 │   │   ├── social_network.js       # 社会网络关系图页交互
 │   │   ├── regression.js          # 回归页交互
-│   │   └── heat_analysis.js       # 热力分析页交互
+│   │   ├── heat_analysis.js       # 热力分析页交互
+│   │   └── clustering.js          # 聚类分析页交互
 │   └── images/
 │       └── banner_background.png  # 历史资源，当前页面不再引用
 │
@@ -114,6 +117,7 @@ DataAnalyticsToolkit/
 │   ├── social_network.py            # 分词共现与关系图数据
 │   ├── regression.py              # 线性回归
 │   ├── heat_analysis.py           # 列间相关性热力值
+│   ├── clustering.py              # TF-IDF + K-Means 文本/表格聚类
 │   └── stopwords.txt              # 停用词表
 │
 ├── uploads/
@@ -158,6 +162,7 @@ def create_app(config_class=Config) -> Flask:
 | `/social-network` | `social_network.html` | 社会网络关系图 |
 | `/regression` | `regression.html` | 回归分析 |
 | `/heat-analysis` | `heat_analysis.html` | 热力分析 |
+| `/clustering` | `clustering.html` | 聚类分析 |
 
 ---
 
@@ -223,6 +228,9 @@ def create_app(config_class=Config) -> Flask:
 |------|------|------|
 | `/api/heat-analysis/preview` | POST | 表格预览并识别可用数值列，FormData：`file` |
 | `/api/heat-analysis` | POST | 计算所选列的 Pearson 相关系数矩阵，FormData：`file, columns`，其中 `columns` 为列名 JSON 数组 |
+| `/api/heat-analysis/clustering/preview` | POST | 表格聚类预览并识别可用文本列，FormData：`file` |
+| `/api/heat-analysis/clustering` | POST | 文本或表格列聚类，FormData：文本模式 `mode, text, n_clusters`；表格模式 `mode, file, column, n_clusters` |
+| `/api/heat-analysis/clustering/export` | POST | 导出聚类摘要和样本归属 Excel，JSON：`{result}` |
 
 ### 社会网络关系图
 
@@ -347,19 +355,39 @@ def heatmap_values(
 - 返回所选列、样本数、Pearson 相关系数矩阵和矩阵最小/最大值。
 - 常量列导致的未定义交叉相关值以 0 展示，对角线固定为 1。
 
+### `utils.clustering`
+
+```python
+def split_sentences(text: str) -> list[str]
+def clustering_column_details(df) -> list[dict]
+def dataframe_column_texts(df, column: str) -> tuple[list[str], list[int]]
+def cluster_documents(
+    documents: Sequence[str],
+    n_clusters: int | str,
+    item_indices: Sequence[int] | None = None,
+) -> dict[str, Any]
+```
+
+- 文本模式按中文/英文句末标点和换行拆分句子，表格模式读取用户选中的单列并忽略空值。
+- 使用 jieba/正则分词生成 TF-IDF 特征，使用固定随机种子的 K-Means 返回聚类标签、中心关键词、中心距离和二维展示坐标。
+- 聚类数量至少为 2 且不能超过有效样本数；无有效词语或有效样本时返回可读错误。
+
 ---
 
 ## 八、当前前端实现进度
 
 - `base.html` 已包含顶部工具栏、持久化分析工具侧栏、页脚、Plotly CDN 和全局 CSS。
-- 侧栏在首页和七个功能页面中都会显示；当前页面对应的工具通过 `request.endpoint` 自动高亮，桌面端使用粘性定位，移动端折叠为顶部列表。
-- `index.html` 是面板型工作台首页，不再使用 Hero、功能介绍卡片或 CTA 横幅；左侧展示七个工具，右侧展示当前默认的数据清洗操作面板和快速入口。
+- 侧栏在首页和八个功能页面中都会显示；当前页面对应的工具通过 `request.endpoint` 自动高亮，桌面端使用粘性定位，移动端折叠为顶部列表。
+- `index.html` 是面板型工作台首页，不再使用 Hero、功能介绍卡片或 CTA 横幅；左侧展示八个工具，右侧展示当前默认的数据清洗操作面板和快速入口。
 - `segmentation.html` 使用 `common.js` + `segmentation.js`。
 - `regression.html` 使用 `common.js` + `regression.js`。
 - `cleaning.html`、`sentiment.html`、`wordcloud.html` 当前主要使用页内脚本，并复用 `common.js`。
+- `heat_analysis.html` 使用 `common.js` + `heat_analysis.js`，只提供相关性热力图。
+- `clustering.html` 使用 `common.js` + `clustering.js`，提供文本聚类和表格聚类。
 - 所有上传型页面都采用 Ajax/FormData 与后端 API 交互。
 - 词频、情感、清洗相关结果支持 Excel 下载。
 - `static/js/segmentation.js`、`static/js/regression.js`、`static/js/heat_analysis.js` 的 Plotly 图表使用黑白中性色；情感分析结果使用绿色表示积极、蓝色表示中性、珊瑚色表示消极。
+- 聚类结果显示 TF-IDF 特征空间的二维样本散点图、聚类关键词摘要和逐样本归属表。
 - 六个非首页功能页的右侧操作区域使用模块强调色：分词统计为蓝色、词云制作为紫色、情感分析为珊瑚色、社会网络关系图为靛紫色、回归分析为青绿色、热力分析为金色；首页操作面板保留独立的暖黄色/青绿色按钮。
 
 后续如果继续扩展前端交互，优先将页面内过长脚本拆入 `static/js/<module>.js`，但不要在没有必要时做大规模重构。
@@ -414,6 +442,11 @@ def heatmap_values(
 - 支持 CSV / XLS / XLSX 文件上传、前 20 行预览和可用数值列识别。
 - 用户至少选择 2 列；每个交叉单元格表示对应两列的 Pearson 相关系数。
 - 结果使用 Plotly 绘制带数值标注的相关性热力图，色阶范围固定为 -1 到 1。
+
+### 聚类分析
+
+- 页面位于左侧导航“热力分析”下方，支持文本模式按句子聚类，表格模式选择一列聚类。
+- 聚类结果使用 TF-IDF + K-Means，展示样本分布、各聚类关键词、样本归属和中心距离，并支持导出 Excel。
 
 ---
 

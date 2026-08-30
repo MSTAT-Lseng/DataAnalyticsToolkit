@@ -51,3 +51,9 @@ def cleaning():
 def heat_analysis():
     """热力分析页面。"""
     return render_template("heat_analysis.html")
+
+
+@pages_bp.route("/clustering")
+def clustering():
+    """聚类分析页面。"""
+    return render_template("clustering.html")

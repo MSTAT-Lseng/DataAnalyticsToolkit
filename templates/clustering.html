@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}聚类分析 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-title">聚类分析</h1>
+        <p class="page-desc">支持按句子或表格列进行 TF-IDF + K-Means 聚类。</p>
+    </div>
+</section>
+
+<section class="section clustering-page">
+    <div class="container">
+        <div class="card cluster-controls-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">聚类分析</h3>
+                    <p class="card-desc">使用 TF-IDF 提取文本特征，再用 K-Means 按相似度分组。</p>
+                </div>
+                <span class="badge badge-muted">TF-IDF + K-Means</span>
+            </div>
+            <div class="card-body">
+                <div class="tab-bar cluster-mode-tabs" role="tablist" aria-label="聚类输入方式">
+                    <button type="button" class="tab-btn active" data-cluster-mode="text" role="tab" aria-selected="true">文本聚类</button>
+                    <button type="button" class="tab-btn" data-cluster-mode="table" role="tab" aria-selected="false">表格聚类</button>
+                </div>
+
+                <div id="cluster-text-panel" class="cluster-mode-panel">
+                    <form id="cluster-text-form" class="cluster-form">
+                        <div class="form-group cluster-text-group">
+                            <label for="cluster-text" class="form-label">输入文本</label>
+                            <textarea id="cluster-text" class="textarea cluster-textarea" rows="8" placeholder="请输入多条句子，使用句号、问号、感叹号或换行分隔"></textarea>
+                            <p class="form-hint">系统会按句子拆分，空句子自动忽略。</p>
+                        </div>
+                        <div class="cluster-form-row">
+                            <div class="form-group cluster-count-group">
+                                <label for="cluster-text-count" class="form-label">聚类数量</label>
+                                <input id="cluster-text-count" class="text-input" type="number" min="2" max="12" value="3" required>
+                            </div>
+                            <button type="submit" id="cluster-text-submit" class="btn btn-primary">开始聚类</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="cluster-table-panel" class="cluster-mode-panel" hidden>
+                    <div class="regression-upload-row">
+                        <label class="file-dropzone" for="cluster-file">
+                            <span class="file-dropzone-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>
+                                </svg>
+                            </span>
+                            <span class="file-dropzone-copy">
+                                <strong>选择表格文件</strong>
+                                <span id="cluster-file-name">尚未选择文件</span>
+                            </span>
+                            <span class="btn btn-secondary btn-sm">浏览文件</span>
+                            <input type="file" id="cluster-file" accept=".csv,.xls,.xlsx" class="visually-hidden">
+                        </label>
+                    </div>
+                    <p id="cluster-upload-status" class="form-hint" role="status">上传文件后选择需要聚类的列。</p>
+
+                    <form id="cluster-table-form" class="cluster-form" hidden>
+                        <div class="cluster-form-row cluster-table-form-row">
+                            <div class="form-group cluster-column-group">
+                                <label for="cluster-column" class="form-label">聚类列</label>
+                                <select id="cluster-column" class="text-input" disabled required>
+                                    <option value="">请先上传表格</option>
+                                </select>
+                            </div>
+                            <div class="form-group cluster-count-group">
+                                <label for="cluster-table-count" class="form-label">聚类数量</label>
+                                <input id="cluster-table-count" class="text-input" type="number" min="2" max="12" value="3" required>
+                            </div>
+                            <button type="submit" id="cluster-table-submit" class="btn btn-primary" disabled>开始聚类</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="cluster-table-preview-card" class="card cluster-table-preview-card" hidden>
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">数据预览</h3>
+                    <p id="cluster-preview-meta" class="card-desc"></p>
+                </div>
+            </div>
+            <div id="cluster-preview" class="preview-scroll"></div>
+        </div>
+
+        <div id="cluster-empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m7.7 8.1 2.7 7.1M16.3 7.5l-2.7 8.2M8 7.2l8-.4"/>
+            </svg>
+            <p class="empty-state-text">输入文本或上传表格后，聚类结果将在此处显示。</p>
+        </div>
+
+        <div id="cluster-result" class="results-area" hidden>
+            <div class="heat-results-heading">
+                <div>
+                    <h2 class="section-title">聚类结果</h2>
+                    <p id="cluster-results-meta" class="section-desc"></p>
+                </div>
+                <button type="button" id="cluster-export" class="btn btn-secondary" hidden disabled>导出 Excel</button>
+            </div>
+            <div class="cluster-result-overview">
+                <div class="cluster-result-badges">
+                    <span id="cluster-method" class="badge badge-muted">TF-IDF + K-Means</span>
+                    <span id="cluster-result-count" class="text-muted"></span>
+                    <span id="cluster-feature-count" class="text-muted"></span>
+                </div>
+            </div>
+            <div class="card cluster-chart-card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">样本分布</h3>
+                        <p class="card-desc">二维坐标仅用于展示样本之间的相对距离。</p>
+                    </div>
+                </div>
+                <div id="cluster-chart" class="chart-container cluster-chart"></div>
+            </div>
+            <div id="cluster-summary" class="cluster-summary-grid"></div>
+            <div class="card cluster-items-card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">样本归属</h3>
+                        <p class="card-desc">距离表示样本到所属聚类中心的 TF-IDF 空间距离。</p>
+                    </div>
+                </div>
+                <div id="cluster-items" class="preview-scroll"></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clustering.js') }}"></script>
+{% endblock %}

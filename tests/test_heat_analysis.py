@@ -115,7 +115,7 @@ class HeatAnalysisApiTests(unittest.TestCase):
         self.assertEqual(result["sample_count"], 4)
         self.assertEqual(len(result["values"]), 3)
 
-    def test_xlsx_preview_and_old_public_entry_removed(self):
+    def test_xlsx_preview_and_separate_public_entries(self):
         response = self.client.post(
             "/api/heat-analysis/preview",
             data={"file": (io.BytesIO(self.xlsx_bytes()), "ratings.xlsx")},
@@ -126,8 +126,20 @@ class HeatAnalysisApiTests(unittest.TestCase):
 
         response = self.client.get("/heat-analysis")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("热力分析", response.get_data(as_text=True))
-        self.assertNotIn("维度挖掘", response.get_data(as_text=True))
+        page = response.get_data(as_text=True)
+        self.assertIn("热力分析", page)
+        self.assertIn("/static/js/heat_analysis.js", page)
+        self.assertNotIn("cluster-text-form", page)
+        self.assertNotIn("/static/js/clustering.js", page)
+
+        response = self.client.get("/clustering")
+        self.assertEqual(response.status_code, 200)
+        clustering_page = response.get_data(as_text=True)
+        self.assertIn("聚类分析", clustering_page)
+        self.assertIn("cluster-text-form", clustering_page)
+        self.assertIn("/static/js/clustering.js", clustering_page)
+        self.assertIn('class="tool-nav-item tool-nav-subitem active"', clustering_page)
+        self.assertNotIn("维度挖掘", page)
         self.assertEqual(self.client.get("/dimension-mining").status_code, 404)
 
     def test_analysis_requires_two_columns(self):

@@ -1,5 +1,5 @@
 /**
- * heat_analysis.js — 表格上传、数值列选择和相关性热力图。
+ * heat_analysis.js — 相关性热力图。
  */
 
 (function () {
@@ -9,7 +9,6 @@
         file: null,
         selectedColumns: []
     };
-
     const fileInput = document.getElementById('heat-file');
     const fileName = document.getElementById('heat-file-name');
     const uploadStatus = document.getElementById('heat-upload-status');
@@ -26,7 +25,6 @@
     const resultsMeta = document.getElementById('heat-results-meta');
     const sampleCount = document.getElementById('heat-sample-count');
 
-    // Clear the native input before opening the picker so selecting the same file again works.
     fileInput.addEventListener('click', function () {
         fileInput.value = '';
     });
