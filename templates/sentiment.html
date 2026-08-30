@@ -610,7 +610,7 @@
                 <td>${i + 1}</td>
                 <td class="sentence-text">${escapeHtml(s.text)}</td>
                 <td><code>${s.score.toFixed(3)}</code></td>
-                <td><span class="badge badge-${s.label === '积极' ? 'green' : s.label === '消极' ? 'orange' : 'muted'}">${s.label}</span></td>
+                        <td><span class="badge sentiment-result-badge ${s.label === '积极' ? 'positive' : s.label === '消极' ? 'negative' : 'neutral'}">${s.label}</span></td>
                 ${customCol}
             </tr>`;
         });
@@ -669,7 +669,7 @@
                 <td>${i + 1}</td>
                 <td class="sentence-text" title="${escapeHtml(row.text)}">${truncateText(row.text, 60)}</td>
                 <td><code>${row.score.toFixed(3)}</code></td>
-                <td><span class="badge badge-${row.label === '积极' ? 'green' : row.label === '消极' ? 'orange' : 'muted'}">${row.label}</span></td>
+                        <td><span class="badge sentiment-result-badge ${row.label === '积极' ? 'positive' : row.label === '消极' ? 'negative' : 'neutral'}">${row.label}</span></td>
                 ${customCol}
             </tr>`;
         });

@@ -27,6 +27,9 @@
   --color-action-aqua: #8bd8cf;
   --color-action-coral: #ff9f87;
   --color-action-lilac: #b9b4ff;
+  --color-sentiment-positive: #2e8b57;
+  --color-sentiment-neutral: #4f86c6;
+  --color-sentiment-negative: #e76f51;
 
   --font-display: "SF Pro Rounded", ui-rounded, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -884,6 +887,27 @@ input[type="color"].text-input {
   color: var(--color-charcoal);
 }
 
+.sentiment-result-badge {
+  border: 1px solid transparent;
+  color: #ffffff;
+}
+
+.sentiment-result-badge.positive {
+  background: var(--color-sentiment-positive);
+  border-color: var(--color-sentiment-positive);
+}
+
+.sentiment-result-badge.neutral {
+  background: var(--color-sentiment-neutral);
+  border-color: var(--color-sentiment-neutral);
+}
+
+.sentiment-result-badge.negative {
+  background: var(--color-sentiment-negative);
+  border-color: var(--color-sentiment-negative);
+  color: #fff;
+}
+
 /* Cleaning and dimension configuration */
 .workflow-steps {
   margin: 0;
@@ -1125,17 +1149,17 @@ input[type="color"].text-input {
 
 .sentiment-label.positive,
 .bar-label.positive {
-  color: var(--color-ink);
+  color: var(--color-sentiment-positive);
 }
 
 .sentiment-label.negative,
 .bar-label.negative {
-  color: var(--color-charcoal);
+  color: var(--color-sentiment-negative);
 }
 
 .sentiment-label.neutral,
 .bar-label.neutral {
-  color: var(--color-body);
+  color: var(--color-sentiment-neutral);
 }
 
 .sentiment-bars {
@@ -1175,15 +1199,15 @@ input[type="color"].text-input {
 }
 
 .bar-fill.positive {
-  background: var(--color-primary);
+  background: var(--color-sentiment-positive);
 }
 
 .bar-fill.neutral {
-  background: var(--color-mute);
+  background: var(--color-sentiment-neutral);
 }
 
 .bar-fill.negative {
-  background: var(--color-charcoal);
+  background: var(--color-sentiment-negative);
 }
 
 .bar-value {

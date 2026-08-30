@@ -352,7 +352,7 @@ def mine_dimensions(
 - `cleaning.html`、`sentiment.html`、`wordcloud.html`、`dimension_mining.html` 当前主要使用页内脚本，并复用 `common.js`。
 - 所有上传型页面都采用 Ajax/FormData 与后端 API 交互。
 - 词频、情感、清洗和维度挖掘相关结果支持 Excel 下载。
-- `static/js/segmentation.js`、`static/js/regression.js` 以及维度挖掘页内 Plotly 图表使用黑白中性色，与新的界面设计保持一致。
+- `static/js/segmentation.js`、`static/js/regression.js` 以及维度挖掘页内 Plotly 图表使用黑白中性色；情感分析结果使用绿色表示积极、蓝色表示中性、珊瑚色表示消极。
 - 五个非首页功能页的右侧操作区域使用模块强调色：分词统计为蓝色、词云制作为紫色、情感分析为珊瑚色、回归分析为青绿色、维度挖掘为金色；首页操作面板保留独立的暖黄色/青绿色按钮。
 
 后续如果继续扩展前端交互，优先将页面内过长脚本拆入 `static/js/<module>.js`，但不要在没有必要时做大规模重构。
