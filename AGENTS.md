@@ -229,7 +229,7 @@ def create_app(config_class=Config) -> Flask:
 | 端点 | 方法 | 说明 |
 |------|------|------|
 | `/api/social-network/preview` | POST | 表格来源预览，返回列名和前 20 行 |
-| `/api/social-network/import-frequency` | POST | 导入分词统计导出的词频表，返回词语列中的分词规则 |
+| `/api/social-network/import-frequency` | POST | 导入分词统计导出的词频表，最多返回前 4000 个分词规则 |
 | `/api/social-network/prepare` | POST | 文本/表格列分词，应用导入的分词规则并返回摘要 |
 | `/api/social-network/graph` | POST | 基于词语窗口共现关系返回节点和连线数据 |
 
@@ -412,6 +412,7 @@ def mine_dimensions(
 
 - 支持文本模式直接分词，以及表格模式上传文件后选择文本列分词。
 - 分词规则通过单个“分词统计”导出的词频 Excel 获取，不在本页面重复维护停用词和词典输入控件。
+- 导入词频 Excel 时按原始顺序最多保留前 4000 个分词规则。
 - 按文本句子或表格行统计窗口内的词语共现关系，Plotly 展示节点、连线和关系明细。
 
 ### 回归分析

@@ -16,7 +16,9 @@
                 <h4 style="font-size:16px; font-weight:600; color:var(--color-ink); margin:8px 0 var(--sp-sm);">📋 使用介绍</h4>
                 <ol class="workflow-steps">
                     <li>选择文本或表格列作为关系图的数据来源。</li>
-                    <li>导入分词统计导出的词频 Excel，复用其中的分词规则。</li>
+                    <li>导入
+                        <a href="{{ url_for('pages.segmentation') }}" class="btn-link" style="font-weight:600;">分词统计</a>
+                        导出的词频 Excel，复用其中的分词规则。</li>
                     <li>准备分词数据后绘制关系图，节点表示词语，连线表示窗口内的共现次数。</li>
                 </ol>
             </div>
@@ -26,9 +28,8 @@
             <div class="card-header">
                 <div>
                     <h3 class="card-title">准备数据</h3>
-                    <p class="card-desc">先准备来源数据，再导入分词结果表。</p>
                 </div>
-                <span id="source-status" class="badge badge-muted">文本模式</span>
+                <span id="source-status" style="display: none;" class="badge badge-muted">文本模式</span>
             </div>
             <div class="card-body" style="padding-top:0;">
                 <div class="tab-bar" role="tablist" aria-label="数据来源模式">
@@ -82,7 +83,7 @@
                     <div class="form-group">
                         <label class="form-label" for="segmentation-file">分词统计结果</label>
                         <input type="file" id="segmentation-file" accept=".xls,.xlsx,.csv" class="file-input">
-                        <span id="segmentation-status" class="form-hint">上传“分词统计”中的“导出全部词频” Excel，作为分词规则</span>
+                        <span id="segmentation-status" class="form-hint">上传“分词统计”中的“导出全部词频” Excel，最多保留前 4000 个分词规则</span>
                     </div>
                 </div>
 
@@ -107,7 +108,7 @@
                 </div>
 
                 <div class="form-actions form-actions-divider">
-                    <span id="prepare-hint" class="form-hint">准备来源数据和分词规则表后开始。</span>
+                    <span id="prepare-hint" class="form-hint"></span>
                     <button type="button" id="prepare-btn" class="btn btn-primary" style="margin-left:auto;">准备分词数据</button>
                     <button type="button" id="graph-btn" class="btn btn-secondary" disabled>绘制关系图</button>
                 </div>

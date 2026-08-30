@@ -10,6 +10,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from utils.file_helpers import dataframe_preview, uploaded_dataframe
 from utils.social_network import (
+    MAX_SEGMENTATION_WORDS,
     build_cooccurrence_graph,
     parse_frequency_dataframe,
     prepare_network_data,
@@ -134,6 +135,7 @@ def api_social_network_import_frequency():
                 "success": True,
                 "words": words,
                 "count": len(words),
+                "max_words": MAX_SEGMENTATION_WORDS,
                 "word_column": word_column,
                 "source_file": file.filename,
             })

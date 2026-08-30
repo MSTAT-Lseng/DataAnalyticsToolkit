@@ -20,6 +20,7 @@ from utils.segmentation import tokenize_text
 
 WORD_COLUMN_NAMES = {"词语", "词", "word", "term", "token"}
 COUNT_COLUMN_NAMES = {"频次", "词频", "count", "freq", "frequency"}
+MAX_SEGMENTATION_WORDS = 4000
 
 
 def _normalise_column_name(value: Any) -> str:
@@ -72,7 +73,7 @@ def frequency_columns(columns: Iterable[Any]) -> tuple[Any | None, Any | None]:
 
 
 def parse_frequency_dataframe(df) -> tuple[list[str], str | None]:
-    """解析“分词统计”导出的 DataFrame，返回词条和识别说明。"""
+    """解析词频表，按原始顺序最多返回前 4000 个分词规则。"""
     word_column, count_column = frequency_columns(df.columns)
     if word_column is None or count_column is None:
         raise ValueError("无法识别分词结果表，请上传包含「词语」和「频次」列的 Excel 文件")
@@ -91,7 +92,7 @@ def parse_frequency_dataframe(df) -> tuple[list[str], str | None]:
     imported = list(dict.fromkeys(imported))
     if not imported:
         raise ValueError("分词结果表中没有有效词条，请确认「频次」列为正数")
-    return imported, str(word_column)
+    return imported[:MAX_SEGMENTATION_WORDS], str(word_column)
 
 
 def split_documents(text: str) -> list[str]:

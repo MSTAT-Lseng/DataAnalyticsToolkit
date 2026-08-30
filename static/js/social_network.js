@@ -170,7 +170,7 @@
         if (!file) {
             state.segmentationImporting = false;
             prepareBtn.disabled = false;
-            segmentationStatus.textContent = '上传“分词统计”中的“导出全部词频” Excel，作为分词规则';
+            segmentationStatus.textContent = '上传“分词统计”中的“导出全部词频” Excel，最多保留前 4000 个分词规则';
             segmentationStatus.className = 'form-hint';
             return;
         }
@@ -197,7 +197,7 @@
                 throw new Error('接口返回的分词规则格式无效');
             }
             state.segmentationWords = data.words;
-            segmentationStatus.textContent = `已导入 ${data.count} 个分词规则（${data.word_column}列）`;
+            segmentationStatus.textContent = `已导入 ${data.count} 个分词规则`;
             segmentationStatus.className = 'form-hint network-imported-status';
         } catch (err) {
             if (importId !== segmentationImportId) return;
@@ -222,7 +222,7 @@
         preparedCard.style.display = 'none';
         graphResults.style.display = 'none';
         emptyState.style.display = '';
-        prepareHint.textContent = '准备来源数据和分词规则表后开始。';
+        prepareHint.textContent = '';
     }
 
     function buildFormData() {
