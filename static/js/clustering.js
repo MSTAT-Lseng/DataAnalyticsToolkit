@@ -12,6 +12,8 @@
     };
 
     const modeButtons = document.querySelectorAll('[data-cluster-mode]');
+    const removeStopwords = document.getElementById('cluster-remove-stopwords');
+    const extraStopwords = document.getElementById('cluster-extra-stopwords');
     const textPanel = document.getElementById('cluster-text-panel');
     const tablePanel = document.getElementById('cluster-table-panel');
     const textForm = document.getElementById('cluster-text-form');
@@ -148,6 +150,7 @@
         formData.append('mode', 'text');
         formData.append('text', text);
         formData.append('n_clusters', textCount.value);
+        appendStopwordOptions(formData);
         await submitClustering(formData, textSubmit);
     }
 
@@ -160,7 +163,19 @@
         formData.append('file', state.file);
         formData.append('column', state.column);
         formData.append('n_clusters', tableCount.value);
+        appendStopwordOptions(formData);
         await submitClustering(formData, tableSubmit);
+    }
+
+    function appendStopwordOptions(formData) {
+        formData.append('remove_stopwords', String(removeStopwords.checked));
+        const customWords = extraStopwords.value
+            .split(/\r?\n/)
+            .map(word => word.trim())
+            .filter(Boolean);
+        if (customWords.length) {
+            formData.append('extra_stopwords', customWords.join('\n'));
+        }
     }
 
     async function submitClustering(formData, button) {

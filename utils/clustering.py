@@ -15,6 +15,8 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from utils.segmentation import STOPWORDS
+
 
 _TOKEN_RE = re.compile(r"[\u4e00-\u9fff]+|[A-Za-z]+(?:'[A-Za-z]+)?|\d+(?:\.\d+)?")
 _SENTENCE_RE = re.compile(r"(?<=[。！？!?；;])\s*|\n+")
@@ -31,14 +33,27 @@ def split_sentences(text: str) -> list[str]:
     return sentences
 
 
-def _tokenize(text: str) -> list[str]:
+def _tokenize(
+    text: str,
+    remove_stopwords: bool = True,
+    extra_stopwords: set[str] | None = None,
+) -> list[str]:
     """提取中英文词语和数字，避免默认 TF-IDF 将中文整句视为一个词。"""
     tokens: list[str] = []
+    stopwords = STOPWORDS | {
+        str(word).strip().lower()
+        for word in (extra_stopwords or set())
+        if str(word).strip()
+    }
     for fragment in _TOKEN_RE.findall(text.lower()):
         if re.fullmatch(r"[\u4e00-\u9fff]+", fragment):
-            tokens.extend(token.strip() for token in jieba.lcut(fragment) if token.strip())
+            fragment_tokens = jieba.lcut(fragment)
         else:
-            tokens.append(fragment)
+            fragment_tokens = [fragment]
+        for token in fragment_tokens:
+            token = token.strip()
+            if token and (not remove_stopwords or token.lower() not in stopwords):
+                tokens.append(token)
     return tokens
 
 
@@ -124,6 +139,8 @@ def cluster_documents(
     documents: Sequence[str],
     n_clusters: int | str,
     item_indices: Sequence[int] | None = None,
+    remove_stopwords: bool = True,
+    extra_stopwords: set[str] | None = None,
 ) -> dict[str, Any]:
     """对文档执行 TF-IDF + K-Means，并返回摘要、关键词和可视化数据。"""
     raw_documents = list(documents)
@@ -145,7 +162,11 @@ def cluster_documents(
 
     cluster_count = _parse_cluster_count(n_clusters, len(cleaned_documents))
     vectorizer = TfidfVectorizer(
-        tokenizer=_tokenize,
+        tokenizer=lambda text: _tokenize(
+            text,
+            remove_stopwords=remove_stopwords,
+            extra_stopwords=extra_stopwords,
+        ),
         token_pattern=None,
         lowercase=False,
         min_df=1,

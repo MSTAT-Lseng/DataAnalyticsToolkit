@@ -11,6 +11,23 @@
 
 <section class="section clustering-page">
     <div class="container">
+
+        <!-- ============================================================
+             Workflow Guide
+             ============================================================ -->
+        <div class="card" style="background: var(--color-surface-soft); border-color: var(--color-hairline);">
+            <div class="card-body" style="padding-bottom: var(--sp-lg);">
+                <h4 style="font-size:16px; font-weight:600; color: var(--color-ink); margin-bottom: var(--sp-sm); margin: 8px 0;">
+                    📋 使用介绍
+                </h4>
+                <ol class="workflow-steps">
+                    <li>上传表格后选择选择一列进行聚类分析。</li>
+                    <li>请提前设置好停用词，噪声较大的数据聚类效果不佳。</li>
+                    <li>分类结果需要手动发现规律并为每一组命名。</li>
+                </ol>
+            </div>
+        </div>
+
         <div class="card cluster-controls-card">
             <div class="card-header">
                 <div>
@@ -23,6 +40,19 @@
                 <div class="tab-bar cluster-mode-tabs" role="tablist" aria-label="聚类输入方式">
                     <button type="button" class="tab-btn active" data-cluster-mode="text" role="tab" aria-selected="true">文本聚类</button>
                     <button type="button" class="tab-btn" data-cluster-mode="table" role="tab" aria-selected="false">表格聚类</button>
+                </div>
+
+                <div class="cluster-stopword-options">
+                    <div class="form-group form-group-inline toggle-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="cluster-remove-stopwords" checked>
+                            <span>过滤停用词</span>
+                        </label>
+                    </div>
+                    <div class="form-group cluster-stopword-input-group">
+                        <label for="cluster-extra-stopwords" class="form-label">自定义停用词（每行一个）</label>
+                        <textarea id="cluster-extra-stopwords" class="textarea" rows="3" placeholder="在此输入要额外过滤的词语，每行一个……"></textarea>
+                    </div>
                 </div>
 
                 <div id="cluster-text-panel" class="cluster-mode-panel">

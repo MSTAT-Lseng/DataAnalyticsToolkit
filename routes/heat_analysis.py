@@ -123,6 +123,13 @@ def api_heat_clustering():
     try:
         mode = (request.form.get("mode") or "text").strip().lower()
         raw_clusters = (request.form.get("n_clusters") or "").strip()
+        remove_stopwords = (request.form.get("remove_stopwords", "true").strip().lower()
+                            not in {"false", "0", "no", "off"})
+        extra_stopwords = {
+            word.strip().lower()
+            for word in (request.form.get("extra_stopwords") or "").splitlines()
+            if word.strip()
+        }
         if not raw_clusters:
             return jsonify({"success": False, "error": "请输入聚类数量"}), 400
 
@@ -134,10 +141,14 @@ def api_heat_clustering():
                 sentences,
                 raw_clusters,
                 item_indices=list(range(1, len(sentences) + 1)),
+                remove_stopwords=remove_stopwords,
+                extra_stopwords=extra_stopwords,
             )
             result.update({
                 "source_mode": "text",
                 "source_label": "文本输入 · 按句子拆分",
+                "remove_stopwords": remove_stopwords,
+                "extra_stopword_count": len(extra_stopwords),
             })
         elif mode == "table":
             file = request.files.get("file")
@@ -146,12 +157,20 @@ def api_heat_clustering():
                 return jsonify({"success": False, "error": "请选择要聚类的列"}), 400
             with uploaded_dataframe(file) as (df, _suffix, _tmp_path):
                 documents, row_numbers = dataframe_column_texts(df, column)
-                result = cluster_documents(documents, raw_clusters, row_numbers)
+                result = cluster_documents(
+                    documents,
+                    raw_clusters,
+                    row_numbers,
+                    remove_stopwords=remove_stopwords,
+                    extra_stopwords=extra_stopwords,
+                )
                 result.update({
                     "source_mode": "table",
                     "source_file": file.filename,
                     "source_column": column,
                     "source_label": f"{file.filename} · {column} 列",
+                    "remove_stopwords": remove_stopwords,
+                    "extra_stopword_count": len(extra_stopwords),
                 })
         else:
             return jsonify({"success": False, "error": "不支持的聚类输入模式"}), 400
@@ -192,6 +211,8 @@ def api_heat_clustering_export():
         summary_sheet.append(["指标", "数值"])
         summary_sheet.append(["分析方法", result.get("method", "TF-IDF + K-Means")])
         summary_sheet.append(["数据来源", result.get("source_label", "")])
+        summary_sheet.append(["过滤停用词", "是" if result.get("remove_stopwords", True) else "否"])
+        summary_sheet.append(["自定义停用词数", result.get("extra_stopword_count", 0)])
         summary_sheet.append(["样本数", result.get("document_count", len(items))])
         summary_sheet.append(["聚类数", result.get("n_clusters", len(clusters))])
         summary_sheet.append(["TF-IDF 特征数", result.get("feature_count", "")])

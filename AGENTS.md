@@ -229,7 +229,7 @@ def create_app(config_class=Config) -> Flask:
 | `/api/heat-analysis/preview` | POST | 表格预览并识别可用数值列，FormData：`file` |
 | `/api/heat-analysis` | POST | 计算所选列的 Pearson 相关系数矩阵，FormData：`file, columns`，其中 `columns` 为列名 JSON 数组 |
 | `/api/heat-analysis/clustering/preview` | POST | 表格聚类预览并识别可用文本列，FormData：`file` |
-| `/api/heat-analysis/clustering` | POST | 文本或表格列聚类，FormData：文本模式 `mode, text, n_clusters`；表格模式 `mode, file, column, n_clusters` |
+| `/api/heat-analysis/clustering` | POST | 文本或表格列聚类，FormData：文本模式 `mode, text, n_clusters`；表格模式 `mode, file, column, n_clusters`；两种模式均支持 `remove_stopwords, extra_stopwords` |
 | `/api/heat-analysis/clustering/export` | POST | 导出聚类摘要和样本归属 Excel，JSON：`{result}` |
 
 ### 社会网络关系图
@@ -365,11 +365,13 @@ def cluster_documents(
     documents: Sequence[str],
     n_clusters: int | str,
     item_indices: Sequence[int] | None = None,
+    remove_stopwords: bool = True,
+    extra_stopwords: set[str] | None = None,
 ) -> dict[str, Any]
 ```
 
 - 文本模式按中文/英文句末标点和换行拆分句子，表格模式读取用户选中的单列并忽略空值。
-- 使用 jieba/正则分词生成 TF-IDF 特征，使用固定随机种子的 K-Means 返回聚类标签、中心关键词、中心距离和二维展示坐标。
+- 使用 jieba/正则分词生成 TF-IDF 特征，支持内置和自定义停用词过滤，使用固定随机种子的 K-Means 返回聚类标签、中心关键词、中心距离和二维展示坐标。
 - 聚类数量至少为 2 且不能超过有效样本数；无有效词语或有效样本时返回可读错误。
 
 ---
@@ -446,7 +448,7 @@ def cluster_documents(
 ### 聚类分析
 
 - 页面位于左侧导航“热力分析”下方，支持文本模式按句子聚类，表格模式选择一列聚类。
-- 聚类结果使用 TF-IDF + K-Means，展示样本分布、各聚类关键词、样本归属和中心距离，并支持导出 Excel。
+- 聚类结果使用 TF-IDF + K-Means，展示样本分布、各聚类关键词、样本归属和中心距离；支持内置/自定义停用词过滤和导出 Excel。
 
 ---
 
