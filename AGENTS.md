@@ -13,7 +13,7 @@
 3. **词云制作**：支持粘贴文本生成词云，也支持读取词频表生成词云。
 4. **情感分析**：支持文本分析、表格列批量分析、自定义情感词微调和 Excel 导出。
 5. **社会网络关系图**：支持文本或表格列分词，导入分词统计结果作为分词规则，并基于词语共现绘制关系图。
-6. **回归分析**：支持 CSV 上传或手动输入数据，执行一元线性回归并用 Plotly 绘图。
+6. **回归分析**：支持 CSV / XLS / XLSX 上传，选择至少两列 1-10 数值列并对所有列组合执行一元线性回归，用 Plotly 绘制一张或多张回归图。
 7. **维度挖掘**：基于用户配置的关键词/正则规则，对文本列进行多维度百分制评分、汇总和导出。
 
 **视觉设计**：遵循 `DESIGN.md` 中的 Ollama 风格设计系统，使用纯白画布（`#ffffff`）、纯黑主色（`#000000`）、中性灰文本与细边线，采用 SF Pro Rounded / 系统无衬线 / 系统等宽字体。交互控件使用全圆角胶囊形，卡片使用 12px 圆角，不使用渐变或装饰性阴影。
@@ -213,8 +213,8 @@ def create_app(config_class=Config) -> Flask:
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/api/regression` | POST | CSV 回归分析，FormData：`file, x_column, y_column` |
-| `/api/regression/manual` | POST | 手动数据回归分析，JSON：`data: [{x, y}, ...]` |
+| `/api/regression/preview` | POST | 表格预览并识别可用数值列，FormData：`file` |
+| `/api/regression` | POST | 多列两两回归，FormData：`file, columns`，其中 `columns` 为列名 JSON 数组 |
 
 ### 维度挖掘
 
@@ -339,12 +339,14 @@ def parse_custom_sentiment(raw: str) -> Optional[Dict[str, float]]
 ### `utils.regression`
 
 ```python
-def linear_regression_from_csv(filepath, x_column, y_column) -> Dict
+def regression_column_details(df) -> list[dict]
+def eligible_regression_columns(df) -> list[str]
+def pairwise_regression(df, columns) -> list[Dict]
 def linear_regression(x, y, x_label="X", y_label="Y") -> Dict
-def linear_regression_from_json(data, x_key="x", y_key="y") -> Dict
 ```
 
-- 返回截距、斜率、R²、MSE、方程、原始点、预测点、样本数等字段。
+- 回归列必须有标题、至少 2 行数据，且每个数据行都是 1-10（含边界）的数字，支持小数。
+- `pairwise_regression` 按选择顺序将每两列生成一个结果，返回截距、斜率、R²、MSE、方程、原始点、预测点、样本数等字段。
 
 ### `utils.dimension_mining`
 
@@ -417,9 +419,9 @@ def mine_dimensions(
 
 ### 回归分析
 
-- 支持 CSV 文件 + 指定 X/Y 列。
-- 支持手动 JSON 数据点。
-- 结果可直接用于 Plotly 绘制散点图和回归线。
+- 支持 CSV / XLS / XLSX 文件上传、前 20 行预览和可用数值列识别。
+- 用户至少选择 2 列；每个组合以前一列为自变量、后一列为因变量，生成一张 Plotly 散点图和回归线。
+- 列选择严格限制为标题下全部为 1-10（含边界）数值的列，支持小数。
 
 ### 维度挖掘
 
