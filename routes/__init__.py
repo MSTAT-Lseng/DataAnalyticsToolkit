@@ -8,7 +8,7 @@ from routes.wordcloud import wordcloud_bp
 from routes.sentiment import sentiment_bp
 from routes.regression import regression_bp
 from routes.cleaning import cleaning_bp
-from routes.dimension_mining import dimension_mining_bp
+from routes.heat_analysis import heat_analysis_bp
 from routes.social_network import social_network_bp
 
 
@@ -20,5 +20,5 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(sentiment_bp)
     app.register_blueprint(regression_bp)
     app.register_blueprint(cleaning_bp)
-    app.register_blueprint(dimension_mining_bp)
+    app.register_blueprint(heat_analysis_bp)
     app.register_blueprint(social_network_bp)

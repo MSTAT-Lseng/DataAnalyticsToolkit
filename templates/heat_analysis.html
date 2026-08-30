@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}热力分析 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-title">热力分析</h1>
+        <p class="page-desc">上传表格，选择至少两列 1-10 的数值数据，交叉计算列间相关性热力值。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card heat-upload-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">上传数据表</h3>
+                    <p class="card-desc">支持 CSV、XLS、XLSX，第一行将作为列标题。</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="regression-upload-row">
+                    <label class="file-dropzone" for="heat-file">
+                        <span class="file-dropzone-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>
+                            </svg>
+                        </span>
+                        <span class="file-dropzone-copy">
+                            <strong>选择表格文件</strong>
+                            <span id="heat-file-name">尚未选择文件</span>
+                        </span>
+                        <span class="btn btn-secondary btn-sm">浏览文件</span>
+                        <input type="file" id="heat-file" accept=".csv,.xls,.xlsx" class="visually-hidden">
+                    </label>
+                </div>
+                <p id="heat-upload-status" class="form-hint" role="status">上传文件后会自动识别可用数值列。</p>
+            </div>
+        </div>
+
+        <div id="heat-workspace" class="regression-workspace" hidden>
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">选择分析列</h3>
+                        <p class="card-desc">选择至少 2 列，系统会计算每一对列之间的 Pearson 相关系数。</p>
+                    </div>
+                    <span id="heat-selected-count" class="badge badge-muted">已选 0 列</span>
+                </div>
+                <div class="card-body">
+                    <div id="heat-columns" class="regression-columns" role="group" aria-label="可用于热力分析的列"></div>
+                    <div class="regression-selection-note">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        <span id="heat-column-hint">只有每个数据行都是 1-10 数值的列可以选择。</span>
+                    </div>
+                    <form id="heat-form" class="form-actions">
+                        <button type="submit" id="heat-analyze" class="btn btn-primary" disabled>
+                            生成热力图
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">数据预览</h3>
+                        <p id="heat-preview-meta" class="card-desc"></p>
+                    </div>
+                </div>
+                <div id="heat-preview" class="preview-scroll"></div>
+            </div>
+        </div>
+
+        <div id="heat-empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/>
+            </svg>
+            <p class="empty-state-text">上传数据表并选择列后，热力图将在此处显示。</p>
+        </div>
+
+        <div id="heat-result" class="results-area" hidden>
+            <div class="heat-results-heading">
+                <div>
+                    <h2 class="section-title">热力图</h2>
+                    <p id="heat-results-meta" class="section-desc"></p>
+                </div>
+            </div>
+            <div class="card heat-result-card">
+                <div class="card-header heat-result-header">
+                    <div class="heat-result-summary">
+                        <span class="badge badge-muted">Pearson 相关系数</span>
+                        <span id="heat-sample-count" class="text-muted"></span>
+                    </div>
+                    <span class="heat-scale-note">-1 负相关 · 0 无相关 · 1 正相关</span>
+                </div>
+                <div id="heat-chart" class="chart-container heat-chart"></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/heat_analysis.js') }}"></script>
+{% endblock %}

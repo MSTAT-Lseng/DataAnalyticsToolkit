@@ -1712,7 +1712,7 @@ body.page-pages-regression {
   --module-on-accent: #ffffff;
 }
 
-body.page-pages-dimension_mining {
+body.page-pages-heat_analysis {
   --module-accent: #e4b63f;
   --module-accent-hover: #d0a32b;
   --module-accent-soft: rgba(228, 182, 63, 0.15);
@@ -2478,5 +2478,67 @@ body[class*="page-pages-"] .main-content .card-actions .btn-ghost:hover, .export
 
   .regression-chart {
     min-height: 300px;
+  }
+}
+
+/* Heat analysis */
+.heat-results-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.heat-results-heading .section-title {
+  margin: 0;
+  opacity: 1;
+  font-size: 24px;
+}
+
+.heat-results-heading .section-desc {
+  margin-top: 4px;
+}
+
+.heat-result-card {
+  margin-bottom: 0;
+}
+
+.heat-result-header {
+  align-items: center;
+}
+
+.heat-result-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.heat-scale-note {
+  color: var(--color-body);
+  font-size: 13px;
+  text-align: right;
+}
+
+.heat-chart {
+  min-height: 420px;
+  padding: 0 24px 24px;
+}
+
+@media (max-width: 767px) {
+  .heat-result-header {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .heat-scale-note {
+    text-align: left;
+  }
+
+  .heat-chart {
+    min-height: 340px;
+    padding: 0 8px 12px;
   }
 }

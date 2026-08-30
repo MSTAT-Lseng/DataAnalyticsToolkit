@@ -47,7 +47,7 @@ def cleaning():
     return render_template("cleaning.html")
 
 
-@pages_bp.route("/dimension-mining")
-def dimension_mining():
-    """维度挖掘页面。"""
-    return render_template("dimension_mining.html")
+@pages_bp.route("/heat-analysis")
+def heat_analysis():
+    """热力分析页面。"""
+    return render_template("heat_analysis.html")
