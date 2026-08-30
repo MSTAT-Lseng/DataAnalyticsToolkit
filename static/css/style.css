@@ -1121,6 +1121,68 @@ input[type="color"].text-input {
   margin-top: 4px;
 }
 
+/* Social network */
+.network-segmentation-import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.network-preview-panel {
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--r-lg);
+}
+
+.network-preview-panel .card-header {
+  padding-top: 16px;
+}
+
+.network-segmentation-import .form-group,
+.network-options-grid .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.network-segmentation-import .file-input {
+  margin-bottom: 6px;
+}
+
+.network-imported-status {
+  color: var(--module-accent-hover);
+}
+
+.network-options-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.network-options-grid .text-input {
+  width: 100%;
+}
+
+.network-chart {
+  width: 100%;
+  height: clamp(560px, 72vh, 860px);
+  min-height: 560px;
+  padding: 4px 8px 16px;
+}
+
+.network-chart .plot-container,
+.network-chart .svg-container {
+  height: 100% !important;
+  min-height: 0;
+}
+
+.network-chart .main-svg {
+  overflow: visible;
+}
+
 /* Sentiment */
 .sentiment-overview {
   display: flex;
@@ -1636,6 +1698,13 @@ body.page-pages-sentiment {
   --module-on-accent: #ffffff;
 }
 
+body.page-pages-social_network {
+  --module-accent: #7a6bb5;
+  --module-accent-hover: #63539e;
+  --module-accent-soft: rgba(122, 107, 181, 0.1);
+  --module-on-accent: #ffffff;
+}
+
 body.page-pages-regression {
   --module-accent: #1f9d8b;
   --module-accent-hover: #147f70;
@@ -1891,6 +1960,10 @@ body[class*="page-pages-"] .main-content .card-actions .btn-ghost:hover, .export
     padding: 40px 32px 56px;
   }
 
+  .network-options-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-header {
     display: block;
   }
@@ -2015,6 +2088,11 @@ body[class*="page-pages-"] .main-content .card-actions .btn-ghost:hover, .export
     grid-template-columns: 1fr;
   }
 
+  .network-segmentation-import,
+  .network-options-grid {
+    grid-template-columns: 1fr;
+  }
+
   .form-row {
     flex-direction: column;
   }
@@ -2065,6 +2143,18 @@ body[class*="page-pages-"] .main-content .card-actions .btn-ghost:hover, .export
   .chart-container {
     min-height: 320px;
     padding: 8px;
+  }
+
+  .network-chart {
+    height: clamp(440px, 70vh, 680px);
+    min-height: 440px;
+    padding: 4px;
+  }
+
+  .network-chart .plot-container,
+  .network-chart .svg-container {
+    height: 100% !important;
+    min-height: 0;
   }
 
   .footer {

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}社会网络关系图 — 数据分析工具箱{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-title">社会网络关系图</h1>
+        <p class="page-desc">从文本或表格列提取词语共现关系，使用分词统计导出的词频表复用分词规则，生成可交互的关系图。</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="card" style="background: var(--color-surface-soft); border-color: var(--color-hairline);">
+            <div class="card-body" style="padding-bottom: var(--sp-lg);">
+                <h4 style="font-size:16px; font-weight:600; color:var(--color-ink); margin:8px 0 var(--sp-sm);">使用流程</h4>
+                <ol class="workflow-steps">
+                    <li>选择文本或表格列作为关系图的数据来源。</li>
+                    <li>导入分词统计导出的词频 Excel，复用其中的分词规则。</li>
+                    <li>准备分词数据后绘制关系图，节点表示词语，连线表示窗口内的共现次数。</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">准备数据</h3>
+                    <p class="card-desc">先准备来源数据，再导入分词结果表。</p>
+                </div>
+                <span id="source-status" class="badge badge-muted">文本模式</span>
+            </div>
+            <div class="card-body" style="padding-top:0;">
+                <div class="tab-bar" role="tablist" aria-label="数据来源模式">
+                    <button type="button" class="tab-btn active" data-tab="text-tab" role="tab">文本模式</button>
+                    <button type="button" class="tab-btn" data-tab="table-tab" role="tab">表格模式</button>
+                </div>
+
+                <div id="text-tab" class="tab-content" style="margin-top:20px;">
+                    <form id="text-form">
+                        <div class="form-group">
+                            <label class="form-label" for="source-text">文本内容</label>
+                            <textarea id="source-text" class="textarea" rows="8" placeholder="在此粘贴要分析的文本……&#10;&#10;示例：产品设计简洁，使用体验流畅。客服响应很快，物流服务也很稳定。产品设计和客服团队共同提升了用户体验。"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <span class="form-hint">或上传文本文件：</span>
+                            <input type="file" id="source-text-file" accept=".txt" class="file-input">
+                        </div>
+                    </form>
+                </div>
+
+                <div id="table-tab" class="tab-content" style="display:none; margin-top:20px;">
+                    <div class="form-group">
+                        <label class="form-label" for="source-table-file">表格文件</label>
+                        <input type="file" id="source-table-file" accept=".xls,.xlsx,.csv" class="file-input">
+                        <p class="form-hint">上传后点击表头选择一列，系统按行进行分词。</p>
+                    </div>
+                </div>
+
+                <div id="table-preview-area" class="results-area" style="display:none; margin-top:20px;">
+                    <div class="network-preview-panel">
+                        <div class="card-header">
+                            <h4 class="card-title" style="font-size:18px;">表格预览</h4>
+                            <span id="table-info" class="text-muted"></span>
+                        </div>
+                        <div class="table-wrap preview-scroll">
+                            <table class="data-table clickable" id="preview-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="card-body preview-actions">
+                            <div class="preview-col-info">
+                                <span class="form-label preview-col-label">已选列：</span>
+                                <span id="selected-column-display" class="badge badge-muted">未选择（点击表头）</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="network-segmentation-import">
+                    <div class="form-group">
+                        <label class="form-label" for="segmentation-file">分词统计结果</label>
+                        <input type="file" id="segmentation-file" accept=".xls,.xlsx,.csv" class="file-input">
+                        <span id="segmentation-status" class="form-hint">上传“分词统计”中的“导出全部词频” Excel，作为分词规则</span>
+                    </div>
+                </div>
+
+                <div class="network-options-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="window-size">共现窗口</label>
+                        <input type="number" id="window-size" class="text-input" value="4" min="2" max="10">
+                        <span class="form-hint">同一文本单元内的相邻词范围</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="min-frequency">最小词频</label>
+                        <input type="number" id="min-frequency" class="text-input" value="1" min="1" max="9999">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="max-nodes">最多节点</label>
+                        <input type="number" id="max-nodes" class="text-input" value="60" min="5" max="200">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="max-edges">最多关系</label>
+                        <input type="number" id="max-edges" class="text-input" value="180" min="10" max="1000">
+                    </div>
+                </div>
+
+                <div class="form-actions form-actions-divider">
+                    <span id="prepare-hint" class="form-hint">准备来源数据和分词规则表后开始。</span>
+                    <button type="button" id="prepare-btn" class="btn btn-primary" style="margin-left:auto;">准备分词数据</button>
+                    <button type="button" id="graph-btn" class="btn btn-secondary" disabled>绘制关系图</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="prepared-card" class="card" style="display:none;">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">分词数据已准备</h3>
+                    <p class="card-desc">以下为当前配置下的分词摘要。</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="prepared-stats" class="stats-bar"></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>排名</th><th>词语</th><th>频次</th></tr></thead>
+                        <tbody id="prepared-words"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="6" cy="6" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 2 9M16 8l-3 8M8 6h8"/>
+            </svg>
+            <p class="empty-state-text">完成分词准备后，关系图将在此处显示。</p>
+        </div>
+
+        <div id="graph-results" class="results-area" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">社会网络关系图</h3>
+                        <p class="card-desc">节点大小代表词频，连线粗细代表共现次数。</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="graph-stats" class="stats-bar"></div>
+                </div>
+                <div id="network-chart" class="chart-container network-chart"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">关系明细</h3>
+                </div>
+                <div class="table-wrap preview-scroll">
+                    <table class="data-table">
+                        <thead><tr><th>来源词</th><th>目标词</th><th>共现次数</th></tr></thead>
+                        <tbody id="links-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/social_network.js') }}"></script>
+{% endblock %}

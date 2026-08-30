@@ -6,14 +6,15 @@
 
 ## 一、当前定位
 
-本平台是一个面向中文文本和表格数据的数据分析 Web 应用，提供六个已落地功能模块：
+本平台是一个面向中文文本和表格数据的数据分析 Web 应用，提供七个已落地功能模块：
 
 1. **数据清洗**：上传 CSV / Excel，按列配置删除空值、去重、最小字数过滤，并导出清洗结果。
 2. **分词统计**：支持文本输入和表格列分词，支持停用词、自定义词典、词频图表和 Excel 导出。
 3. **词云制作**：支持粘贴文本生成词云，也支持读取词频表生成词云。
 4. **情感分析**：支持文本分析、表格列批量分析、自定义情感词微调和 Excel 导出。
-5. **回归分析**：支持 CSV 上传或手动输入数据，执行一元线性回归并用 Plotly 绘图。
-6. **维度挖掘**：基于用户配置的关键词/正则规则，对文本列进行多维度百分制评分、汇总和导出。
+5. **社会网络关系图**：支持文本或表格列分词，导入分词统计结果作为分词规则，并基于词语共现绘制关系图。
+6. **回归分析**：支持 CSV 上传或手动输入数据，执行一元线性回归并用 Plotly 绘图。
+7. **维度挖掘**：基于用户配置的关键词/正则规则，对文本列进行多维度百分制评分、汇总和导出。
 
 **视觉设计**：遵循 `DESIGN.md` 中的 Ollama 风格设计系统，使用纯白画布（`#ffffff`）、纯黑主色（`#000000`）、中性灰文本与细边线，采用 SF Pro Rounded / 系统无衬线 / 系统等宽字体。交互控件使用全圆角胶囊形，卡片使用 12px 圆角，不使用渐变或装饰性阴影。
 
@@ -76,6 +77,7 @@ DataAnalyticsToolkit/
 │   ├── segmentation.py            # 分词统计 API
 │   ├── wordcloud.py               # 词云制作 API
 │   ├── sentiment.py               # 情感分析 API
+│   ├── social_network.py           # 社会网络关系图 API
 │   ├── regression.py              # 回归分析 API
 │   └── dimension_mining.py        # 维度挖掘 API
 │
@@ -86,6 +88,7 @@ DataAnalyticsToolkit/
 │   ├── segmentation.html          # 分词统计页面
 │   ├── wordcloud.html             # 词云制作页面
 │   ├── sentiment.html             # 情感分析页面
+│   ├── social_network.html         # 社会网络关系图页面
 │   ├── regression.html            # 回归分析页面
 │   └── dimension_mining.html      # 维度挖掘页面
 │
@@ -95,6 +98,7 @@ DataAnalyticsToolkit/
 │   ├── js/
 │   │   ├── common.js              # 公共前端工具函数
 │   │   ├── segmentation.js        # 分词页交互
+│   │   ├── social_network.js       # 社会网络关系图页交互
 │   │   └── regression.js          # 回归页交互
 │   └── images/
 │       └── banner_background.png  # 历史资源，当前页面不再引用
@@ -106,6 +110,7 @@ DataAnalyticsToolkit/
 │   ├── segmentation.py            # 分词与词频统计
 │   ├── wordcloud_gen.py           # 词云生成
 │   ├── sentiment_analysis.py      # 情感分析与自定义情感词
+│   ├── social_network.py            # 分词共现与关系图数据
 │   ├── regression.py              # 线性回归
 │   ├── dimension_mining.py        # 关键词/正则维度挖掘
 │   └── stopwords.txt              # 停用词表
@@ -149,6 +154,7 @@ def create_app(config_class=Config) -> Flask:
 | `/segmentation` | `segmentation.html` | 分词统计 |
 | `/wordcloud` | `wordcloud.html` | 词云制作 |
 | `/sentiment` | `sentiment.html` | 情感分析 |
+| `/social-network` | `social_network.html` | 社会网络关系图 |
 | `/regression` | `regression.html` | 回归分析 |
 | `/dimension-mining` | `dimension_mining.html` | 维度挖掘 |
 
@@ -217,6 +223,19 @@ def create_app(config_class=Config) -> Flask:
 | `/api/dimension-mining/preview` | POST | 表格文件预览，FormData：`file` |
 | `/api/dimension-mining/analyze` | POST | 表格列维度挖掘，FormData：`file, column, dimensions` |
 | `/api/dimension-mining/export` | POST | 导出维度汇总和逐行分析结果 Excel |
+
+### 社会网络关系图
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/social-network/preview` | POST | 表格来源预览，返回列名和前 20 行 |
+| `/api/social-network/import-frequency` | POST | 导入分词统计导出的词频表，返回词语列中的分词规则 |
+| `/api/social-network/prepare` | POST | 文本/表格列分词，应用导入的分词规则并返回摘要 |
+| `/api/social-network/graph` | POST | 基于词语窗口共现关系返回节点和连线数据 |
+
+`/api/social-network` 和 `/api/social-network/analyze` 是关系图接口的兼容别名。
+
+`prepare` 和 `graph` 使用 FormData：`mode, text? / file+column?, segmentation_words, window_size, min_frequency, max_nodes, max_edges`。
 
 `dimensions` 格式：
 
@@ -345,15 +364,15 @@ def mine_dimensions(
 ## 八、当前前端实现进度
 
 - `base.html` 已包含顶部工具栏、持久化分析工具侧栏、页脚、Plotly CDN 和全局 CSS。
-- 侧栏在首页和六个功能页面中都会显示；当前页面对应的工具通过 `request.endpoint` 自动高亮，桌面端使用粘性定位，移动端折叠为顶部列表。
-- `index.html` 是面板型工作台首页，不再使用 Hero、功能介绍卡片或 CTA 横幅；左侧展示六个工具，右侧展示当前默认的数据清洗操作面板和快速入口。
+- 侧栏在首页和七个功能页面中都会显示；当前页面对应的工具通过 `request.endpoint` 自动高亮，桌面端使用粘性定位，移动端折叠为顶部列表。
+- `index.html` 是面板型工作台首页，不再使用 Hero、功能介绍卡片或 CTA 横幅；左侧展示七个工具，右侧展示当前默认的数据清洗操作面板和快速入口。
 - `segmentation.html` 使用 `common.js` + `segmentation.js`。
 - `regression.html` 使用 `common.js` + `regression.js`。
 - `cleaning.html`、`sentiment.html`、`wordcloud.html`、`dimension_mining.html` 当前主要使用页内脚本，并复用 `common.js`。
 - 所有上传型页面都采用 Ajax/FormData 与后端 API 交互。
 - 词频、情感、清洗和维度挖掘相关结果支持 Excel 下载。
 - `static/js/segmentation.js`、`static/js/regression.js` 以及维度挖掘页内 Plotly 图表使用黑白中性色；情感分析结果使用绿色表示积极、蓝色表示中性、珊瑚色表示消极。
-- 五个非首页功能页的右侧操作区域使用模块强调色：分词统计为蓝色、词云制作为紫色、情感分析为珊瑚色、回归分析为青绿色、维度挖掘为金色；首页操作面板保留独立的暖黄色/青绿色按钮。
+- 六个非首页功能页的右侧操作区域使用模块强调色：分词统计为蓝色、词云制作为紫色、情感分析为珊瑚色、社会网络关系图为靛紫色、回归分析为青绿色、维度挖掘为金色；首页操作面板保留独立的暖黄色/青绿色按钮。
 
 后续如果继续扩展前端交互，优先将页面内过长脚本拆入 `static/js/<module>.js`，但不要在没有必要时做大规模重构。
 
@@ -388,6 +407,12 @@ def mine_dimensions(
 - 支持表格列批量分析。
 - 支持自定义情感词微调 SnowNLP 得分。
 - 支持导出摘要和详细结果 Excel。
+
+### 社会网络关系图
+
+- 支持文本模式直接分词，以及表格模式上传文件后选择文本列分词。
+- 分词规则通过单个“分词统计”导出的词频 Excel 获取，不在本页面重复维护停用词和词典输入控件。
+- 按文本句子或表格行统计窗口内的词语共现关系，Plotly 展示节点、连线和关系明细。
 
 ### 回归分析
 

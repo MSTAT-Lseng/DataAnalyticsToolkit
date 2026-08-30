@@ -29,6 +29,12 @@ def sentiment():
     return render_template("sentiment.html")
 
 
+@pages_bp.route("/social-network")
+def social_network():
+    """社会网络关系图页面。"""
+    return render_template("social_network.html")
+
+
 @pages_bp.route("/regression")
 def regression():
     """回归分析页面。"""

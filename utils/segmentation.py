@@ -78,8 +78,33 @@ def segment_text(
     Returns:
         {词语: 频次} 字典，按频次降序排列。
     """
+    cleaned = tokenize_text(
+        text,
+        remove_stopwords=remove_stopwords,
+        extra_stopwords=extra_stopwords,
+        extra_dict=extra_dict,
+    )
+    counter = Counter(cleaned)
+
+    if top_n and top_n > 0:
+        return dict(counter.most_common(top_n))
+
+    return dict(counter.most_common())
+
+
+def tokenize_text(
+    text: str,
+    remove_stopwords: bool = True,
+    extra_stopwords: set[str] | None = None,
+    extra_dict: list[str] | None = None,
+) -> list[str]:
+    """对文本分词并返回保留顺序的词语列表。
+
+    ``segment_text`` 只暴露词频结果，关系图还需要保留词语的顺序来计算
+    窗口共现关系，因此将同一套清洗规则抽成这个公共接口。
+    """
     if not text or not text.strip():
-        return {}
+        return []
 
     # ---- 加载自定义词典 ----
     if extra_dict:
@@ -108,13 +133,7 @@ def segment_text(
             stopwords = STOPWORDS | {w.lower() for w in extra_stopwords}
         cleaned = [w for w in cleaned if w.lower() not in stopwords and len(w) > 1]
 
-    # ---- 统计 ----
-    counter = Counter(cleaned)
-
-    if top_n and top_n > 0:
-        return dict(counter.most_common(top_n))
-
-    return dict(counter.most_common())
+    return cleaned
 
 
 def get_top_words(
