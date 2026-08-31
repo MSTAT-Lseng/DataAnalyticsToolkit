@@ -11,6 +11,8 @@
 
 import os
 import logging
+import sys
+import argparse
 
 from flask import Flask
 
@@ -61,6 +63,10 @@ def _setup_logging(app: Flask) -> None:
 # ============================================================
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', type=int, default=5000)
+    args = parser.parse_args()
+
     app = create_app()
-    app.logger.info("DataAnalyticsToolkit starting on http://127.0.0.1:5000")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.logger.info(f"DataAnalyticsToolkit starting on http://127.0.0.1:{args.port}")
+    app.run(host="127.0.0.1", port=args.port, debug=True)

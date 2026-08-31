@@ -7,6 +7,7 @@
 import base64
 import io
 import os
+import platform
 import tempfile
 import hashlib
 from typing import Dict
@@ -125,22 +126,87 @@ def save_wordcloud_to_file(
 
 def _detect_cjk_font() -> str | None:
     """尝试自动检测系统可用的中文字体。"""
-    candidates = [
-        # Linux
-        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
-        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
-        "/usr/share/fonts/truetype/arphic/uming.ttc",
-        # macOS
-        "/System/Library/Fonts/PingFang.ttc",
-        "/System/Library/Fonts/Hiragino Sans GB.ttc",
-        # Windows (WSL)
-        "/mnt/c/Windows/Fonts/msyh.ttc",
-        "/mnt/c/Windows/Fonts/simsun.ttc",
-        "/mnt/c/Windows/Fonts/simhei.ttf",
+    system = platform.system()
+    
+    # ---- Windows 系统 ----
+    if system == "Windows":
+        # Windows 本地字体路径（按优先级排序）
+        windows_fonts = [
+            # 微软雅黑（首选）
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "msyh.ttc"),
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "msyhbd.ttc"),
+            # 宋体
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "simsun.ttc"),
+            # 黑体
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "simhei.ttf"),
+            # 楷体
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "simkai.ttf"),
+            # 其他常见字体
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "yahei.ttf"),
+            os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "Fonts", "MicrosoftYaHei.ttf"),
+        ]
+        for path in windows_fonts:
+            if os.path.isfile(path):
+                return path
+        
+        # 如果上述路径都不存在，尝试从注册表读取（可选增强）
+        try:
+            import winreg
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 
+                                r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts")
+            # 查找微软雅黑
+            for i in range(winreg.QueryInfoKey(key)[1]):
+                name, value, _ = winreg.EnumValue(key, i)
+                if "微软雅黑" in name or "Microsoft YaHei" in name:
+                    font_path = os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), 
+                                            "Fonts", value)
+                    if os.path.isfile(font_path):
+                        winreg.CloseKey(key)
+                        return font_path
+            winreg.CloseKey(key)
+        except (ImportError, OSError, WindowsError):
+            pass  # 注册表访问失败，继续使用候选列表
+
+    # ---- macOS 系统 ----
+    elif system == "Darwin":
+        mac_fonts = [
+            "/System/Library/Fonts/PingFang.ttc",
+            "/System/Library/Fonts/Hiragino Sans GB.ttc",
+            "/System/Library/Fonts/STHeiti Light.ttc",
+            "/System/Library/Fonts/Microsoft YaHei.ttf",  # 可能已安装
+        ]
+        for path in mac_fonts:
+            if os.path.isfile(path):
+                return path
+
+    # ---- Linux 系统 ----
+    elif system == "Linux":
+        linux_fonts = [
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+            "/usr/share/fonts/truetype/arphic/uming.ttc",
+            # WSL 中的 Windows 字体
+            "/mnt/c/Windows/Fonts/msyh.ttc",
+            "/mnt/c/Windows/Fonts/simsun.ttc",
+            "/mnt/c/Windows/Fonts/simhei.ttf",
+        ]
+        for path in linux_fonts:
+            if os.path.isfile(path):
+                return path
+
+    # ---- 跨平台候选（兜底） ----
+    fallback_fonts = [
+        # 当前目录
+        "./fonts/msyh.ttc",
+        "./fonts/simhei.ttf",
+        # 常见第三方安装路径
+        "C:/Program Files/Common Files/Microsoft Shared/Fonts/msyh.ttc",
+        "/Library/Fonts/Microsoft YaHei.ttf",
     ]
-    for path in candidates:
+    for path in fallback_fonts:
         if os.path.isfile(path):
             return path
+
     return None
