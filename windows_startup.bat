@@ -43,5 +43,5 @@ REM 直接运行 Python 应用（窗口关闭时进程自动结束）
 start /B python app.py --port=%random_port%
 
 echo.
-echo [信息] 服务已停止
+echo [信息] 应用已启动
 pause
